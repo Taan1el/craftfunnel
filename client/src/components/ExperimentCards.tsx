@@ -8,7 +8,7 @@ interface ExperimentCardsProps {
 }
 
 export const ExperimentCards: React.FC<ExperimentCardsProps> = ({ experiments, onRefresh }) => {
-  const [testUserId, setTestUserId] = useState('usr_candidate_99');
+  const [testUserId, setTestUserId] = useState('usr_sample_99');
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 

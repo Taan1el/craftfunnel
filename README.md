@@ -10,11 +10,11 @@
 
 ---
 
-## 2-Minute Evaluation Summary
+## 2-Minute Product Summary
 
 CraftFunnel is a production-grade full-stack growth engineering platform designed to model modern SaaS experimentation, customer lifecycle tracking, and financial payment reconciliation.
 
-### Key Capabilities & Job Requirement Mapping:
+### Key Capabilities:
 1. **Deterministic A/B Testing & Statistical Significance**:
    - Deterministic variant allocation via `SHA256(userId + ":" + experimentKey) % 100` mapped against configurable variant weights. Guarantees consistent user experience across sessions without persistent database lookups.
    - Real-time 2-proportion **Z-score** calculation with normal cumulative distribution approximation reporting statistical confidence levels ($\ge 95\%$ winner determination).
