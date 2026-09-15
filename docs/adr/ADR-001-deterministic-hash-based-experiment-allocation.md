@@ -18,6 +18,6 @@ $$\text{Bucket} = \text{SHA256}(\text{userId} + \text{":"} + \text{experimentKey
 4. **Statistical Significance**: A 2-proportion Z-score with normal cumulative distribution approximation is calculated live to report confidence levels and identify winners ($\ge 95\%$).
 
 ## Consequences
-- Zero cross-device variant hopping.
+- Consistent variant assignment across devices and sessions, provided the caller supplies a stable user id.
 - Minimal database overhead during variant evaluation.
-- Statistically sound experimentation framework conforming to modern growth engineering standards.
+- Significance reporting is a standard two-proportion Z-test, not a full experimentation platform: it does not correct for repeated peeking, multiple comparisons, or sample ratio mismatch.

@@ -19,6 +19,6 @@ Payment gateways such as Stripe, Adyen, and PayPal operate under "at-least-once"
    Upon `charge.refunded`, a negative ledger entry is recorded, and MRR is deducted.
 
 ## Consequences
-- 100% protection against duplicate webhook processing.
-- Clean, traceable audit journal of all financial movements.
-- Reliable MRR and ARPU calculations reflecting real settled balances.
+- A duplicate webhook delivery (same event id) is recognized and skipped before any mutation runs.
+- A traceable audit journal of every ledger entry, keyed to the Stripe event that produced it.
+- MRR and ARPU are derived from the same ledger and customer records that the webhook handler updates, so they stay consistent with what has actually been recorded.

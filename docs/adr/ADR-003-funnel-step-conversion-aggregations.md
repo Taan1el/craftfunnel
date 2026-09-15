@@ -4,7 +4,7 @@
 Accepted
 
 ## Context
-Understanding the customer journey from anonymous landing visit to paying subscriber requires tracking multi-stage conversion funnels. Calculating drop-off percentages and identifying the greatest drop-off bottleneck is crucial for growth engineering teams prioritizing roadmap initiatives.
+Understanding the customer journey from anonymous landing visit to paying subscriber requires tracking multi-stage conversion funnels. Calculating drop-off percentages and identifying where the largest share of customers is lost helps prioritize which part of the funnel to improve first.
 
 ## Decision
 1. **Append-Only Event Log**:
@@ -16,8 +16,8 @@ Understanding the customer journey from anonymous landing visit to paying subscr
    - Total unique customers reaching stage $i$.
    - Cumulative conversion rate relative to the initial `visited` stage: $\frac{\text{count}_i}{\text{count}_{\text{visited}}}$.
    - Sequential drop-off rate from previous stage $i-1$: $\frac{\text{count}_{i-1} - \text{count}_i}{\text{count}_{i-1}}$.
-4. **Automated Bottleneck Detection**:
-   The client-side visualizer detects the stage with the highest drop-off rate and dynamically flags it as a priority growth optimization target.
+4. **Bottleneck Highlight**:
+   The client-side visualizer finds the stage with the highest drop-off rate and calls it out as the stage with the most room for improvement.
 
 ## Consequences
 - Historical event integrity preserved through append-only logging.
