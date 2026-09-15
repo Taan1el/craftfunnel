@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import { PaymentService } from '../services/payment.service.js';
 import crypto from 'node:crypto';
 
+const SIMULATABLE_EVENT_TYPES = new Set(['payment_intent.succeeded', 'invoice.payment_failed', 'charge.refunded']);
+
 export class PaymentController {
   constructor(private paymentService: PaymentService) {}
 
@@ -39,6 +41,24 @@ export class PaymentController {
     try {
       const { event_type, customer_id, amount_cents, idempotency_key } = req.body;
 
+      if (typeof customer_id !== 'string' || customer_id.trim().length === 0) {
+        res.status(400).json({ success: false, error: 'customer_id is required' });
+        return;
+      }
+
+      if (event_type !== undefined && !SIMULATABLE_EVENT_TYPES.has(event_type)) {
+        res.status(400).json({
+          success: false,
+          error: `event_type must be one of: ${Array.from(SIMULATABLE_EVENT_TYPES).join(', ')}`,
+        });
+        return;
+      }
+
+      if (amount_cents !== undefined && (typeof amount_cents !== 'number' || !Number.isFinite(amount_cents) || amount_cents <= 0)) {
+        res.status(400).json({ success: false, error: 'amount_cents must be a positive number' });
+        return;
+      }
+
       const eventId = idempotency_key || `evt_sim_${crypto.randomBytes(6).toString('hex')}`;
       const mockEvent = {
         id: eventId,
@@ -47,7 +67,7 @@ export class PaymentController {
           object: {
             id: `pi_${crypto.randomBytes(6).toString('hex')}`,
             customer: customer_id,
-            amount: amount_cents || 9900,
+            amount: typeof amount_cents === 'number' ? amount_cents : 9900,
             currency: 'EUR',
             invoice: `in_${crypto.randomBytes(4).toString('hex')}`,
           },

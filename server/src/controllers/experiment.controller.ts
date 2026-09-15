@@ -1,6 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import { ExperimentService } from '../services/experiment.service.js';
 
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
 export class ExperimentController {
   constructor(private expService: ExperimentService) {}
 
@@ -16,7 +20,7 @@ export class ExperimentController {
   evaluate = (req: Request, res: Response, next: NextFunction) => {
     try {
       const { experiment_key, user_id } = req.body;
-      if (!experiment_key || !user_id) {
+      if (!isNonEmptyString(experiment_key) || !isNonEmptyString(user_id)) {
         res.status(400).json({ success: false, error: 'experiment_key and user_id are required' });
         return;
       }
@@ -31,7 +35,7 @@ export class ExperimentController {
   convert = (req: Request, res: Response, next: NextFunction) => {
     try {
       const { experiment_key, user_id } = req.body;
-      if (!experiment_key || !user_id) {
+      if (!isNonEmptyString(experiment_key) || !isNonEmptyString(user_id)) {
         res.status(400).json({ success: false, error: 'experiment_key and user_id are required' });
         return;
       }

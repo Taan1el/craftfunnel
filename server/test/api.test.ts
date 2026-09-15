@@ -200,5 +200,136 @@ describe('CraftFunnel API & Growth Engine Tests', () => {
       expect(res.body.data).toHaveProperty('allocations');
       expect(res.body.data).toHaveProperty('ledger');
     });
+
+    it('does not attribute an unresolvable webhook event to an arbitrary customer', async () => {
+      const res = await request(ctx.app)
+        .post('/api/payments/webhook')
+        .send({
+          id: 'evt_unknown_customer_1',
+          type: 'payment_intent.succeeded',
+          data: { object: { customer: 'cust_does_not_exist', amount: 9900 } },
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.reconciled).toBe(false);
+      expect(res.body.ledger).toBeUndefined();
+
+      // No ledger entry should have been created for it.
+      const ledgerRes = await request(ctx.app).get('/api/payments/ledger');
+      expect(ledgerRes.body.data.find((e: any) => e.stripe_event_id === 'evt_unknown_customer_1')).toBeUndefined();
+    });
+
+    it('records a genuine $0 amount instead of silently substituting the 9900 default', async () => {
+      const customersRes = await request(ctx.app).get('/api/customers');
+      const customer = customersRes.body.data[0];
+
+      const res = await request(ctx.app)
+        .post('/api/payments/webhook')
+        .send({
+          id: 'evt_zero_amount_1',
+          type: 'payment_intent.succeeded',
+          data: { object: { customer: customer.id, amount: 0 } },
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.ledger.amount_cents).toBe(0);
+    });
+  });
+
+  describe('Input validation', () => {
+    it('rejects funnel/track with an unknown stage', async () => {
+      const customersRes = await request(ctx.app).get('/api/customers');
+      const customer = customersRes.body.data[0];
+
+      const res = await request(ctx.app)
+        .post('/api/funnel/track')
+        .send({ customer_id: customer.id, stage: 'became_a_wizard' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error).toBeTruthy();
+    });
+
+    it('rejects experiments/evaluate with a non-string user_id', async () => {
+      const res = await request(ctx.app)
+        .post('/api/experiments/evaluate')
+        .send({ experiment_key: 'onboarding_flow_v2', user_id: 12345 });
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+    });
+
+    it('returns 404 (not a leaked stack trace) for evaluating an unknown experiment', async () => {
+      const res = await request(ctx.app)
+        .post('/api/experiments/evaluate')
+        .send({ experiment_key: 'does_not_exist', user_id: 'usr_1' });
+
+      expect(res.status).toBe(404);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error).toContain('does_not_exist');
+    });
+
+    it('rejects payments/simulate without a customer_id', async () => {
+      const res = await request(ctx.app).post('/api/payments/simulate').send({ event_type: 'payment_intent.succeeded' });
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+    });
+
+    it('rejects payments/simulate with an unsupported event_type', async () => {
+      const customersRes = await request(ctx.app).get('/api/customers');
+      const customer = customersRes.body.data[0];
+
+      const res = await request(ctx.app)
+        .post('/api/payments/simulate')
+        .send({ event_type: 'account.updated', customer_id: customer.id });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('rejects payments/simulate with a non-positive amount_cents', async () => {
+      const customersRes = await request(ctx.app).get('/api/customers');
+      const customer = customersRes.body.data[0];
+
+      const res = await request(ctx.app)
+        .post('/api/payments/simulate')
+        .send({ customer_id: customer.id, amount_cents: -500 });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('returns a plain 404 JSON body for an unknown API route instead of the SPA fallback', async () => {
+      const res = await request(ctx.app).get('/api/totally-made-up-route');
+      expect(res.status).toBe(404);
+      expect(res.body).toEqual({ success: false, error: 'Not found' });
+    });
+  });
+
+  describe('Empty-state funnel analytics', () => {
+    it('reports zeroed-out metrics instead of crashing when there is no data at all', async () => {
+      const emptyCtx = createApp(':memory:', false);
+      const res = await request(emptyCtx.app).get('/api/funnel/metrics');
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toHaveLength(5);
+      for (const step of res.body.data) {
+        expect(step.total_count).toBe(0);
+        expect(step.conversion_rate_from_first).toBe(0);
+        expect(step.dropoff_rate).toBe(0);
+      }
+    });
+
+    it('reports zeroed-out growth metrics with no customers or funnel events', async () => {
+      const emptyCtx = createApp(':memory:', false);
+      const res = await request(emptyCtx.app).get('/api/payments/metrics');
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toEqual({
+        mrr_eur: 0,
+        total_customers: 0,
+        active_subscribers: 0,
+        funnel_conversion_rate: 0,
+        arpu_eur: 0,
+      });
+    });
   });
 });

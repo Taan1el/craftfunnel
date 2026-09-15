@@ -1,6 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import crypto from 'node:crypto';
 import { GrowthMetrics, PaymentLedgerEntry } from '../../../shared/types.js';
+import { roundTo1dp, ratioToPercentage } from '../../../shared/format.js';
 
 export class PaymentRepository {
   constructor(private db: DatabaseSync) {}
@@ -101,7 +102,7 @@ export class PaymentRepository {
     const totalMrrCents = Number(custRow?.total_mrr_cents || 0);
 
     const mrrEur = Math.round(totalMrrCents / 100);
-    const arpuEur = activeSub > 0 ? Math.round((mrrEur / activeSub) * 10) / 10 : 0;
+    const arpuEur = activeSub > 0 ? roundTo1dp(mrrEur / activeSub) : 0;
 
     // Overall conversion rate: paid vs visited
     const funnelStmt = this.db.prepare(`
@@ -111,9 +112,9 @@ export class PaymentRepository {
       FROM funnel_events;
     `);
     const funnelRow = funnelStmt.get() as any;
-    const visits = Number(funnelRow?.visits || 1);
+    const visits = Number(funnelRow?.visits || 0);
     const paids = Number(funnelRow?.paids || 0);
-    const conversionRate = Math.round((paids / (visits || 1)) * 1000) / 10;
+    const conversionRate = visits > 0 ? ratioToPercentage(paids / visits) : 0;
 
     return {
       mrr_eur: mrrEur,

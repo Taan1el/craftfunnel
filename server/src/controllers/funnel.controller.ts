@@ -17,7 +17,7 @@ export class FunnelController {
   track = (req: Request, res: Response, next: NextFunction) => {
     try {
       const { customer_id, stage, metadata } = req.body;
-      if (!customer_id || !stage) {
+      if (typeof customer_id !== 'string' || customer_id.trim().length === 0 || typeof stage !== 'string') {
         res.status(400).json({ success: false, error: 'customer_id and stage are required' });
         return;
       }

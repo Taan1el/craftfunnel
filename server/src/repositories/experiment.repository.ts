@@ -1,6 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import crypto from 'node:crypto';
 import { Experiment, Variant } from '../../../shared/types.js';
+import { ratioToPercentage } from '../../../shared/format.js';
 
 export class ExperimentRepository {
   constructor(private db: DatabaseSync) {}
@@ -21,7 +22,7 @@ export class ExperimentRepository {
         weight: Number(v.weight),
         visitors: Number(v.visitors),
         conversions: Number(v.conversions),
-        conversion_rate: v.visitors > 0 ? Math.round((v.conversions / v.visitors) * 1000) / 10 : 0,
+        conversion_rate: v.visitors > 0 ? ratioToPercentage(v.conversions / v.visitors) : 0,
       }));
 
       return {
@@ -52,7 +53,7 @@ export class ExperimentRepository {
       weight: Number(v.weight),
       visitors: Number(v.visitors),
       conversions: Number(v.conversions),
-      conversion_rate: v.visitors > 0 ? Math.round((v.conversions / v.visitors) * 1000) / 10 : 0,
+      conversion_rate: v.visitors > 0 ? ratioToPercentage(v.conversions / v.visitors) : 0,
     }));
 
     return {

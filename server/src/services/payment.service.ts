@@ -38,17 +38,13 @@ export class PaymentService {
       return { status: 'duplicate' };
     }
 
-    // Resolve or find customer
+    // Resolve customer by id, then by email. An event that names neither, or
+    // names one that does not exist, cannot be safely attributed to anyone,
+    // so it is left unhandled rather than charged to an arbitrary customer.
     let customer = obj.customer ? this.customerRepo.getCustomerById(obj.customer) : null;
     if (!customer && obj.customer_email) {
       const allCustomers = this.customerRepo.listCustomers();
       customer = allCustomers.find((c) => c.email === obj.customer_email) || null;
-    }
-
-    // Fallback: If customer not found, pick first active or lead for demonstration
-    if (!customer) {
-      const customers = this.customerRepo.listCustomers();
-      customer = customers[0];
     }
 
     if (!customer) {
@@ -59,7 +55,7 @@ export class PaymentService {
 
     switch (eventType) {
       case 'payment_intent.succeeded': {
-        const amountCents = obj.amount || 9900;
+        const amountCents = typeof obj.amount === 'number' && obj.amount >= 0 ? obj.amount : 9900;
         const currency = (obj.currency || 'EUR').toUpperCase();
 
         // 1. Record Ledger Entry
@@ -85,7 +81,7 @@ export class PaymentService {
       }
 
       case 'invoice.payment_failed': {
-        const amountCents = obj.amount || 9900;
+        const amountCents = typeof obj.amount === 'number' && obj.amount >= 0 ? obj.amount : 9900;
         ledgerEntry = this.paymentRepo.recordLedgerEntry({
           customer_id: customer.id,
           stripe_event_id: eventId,
@@ -99,7 +95,7 @@ export class PaymentService {
       }
 
       case 'charge.refunded': {
-        const amountCents = obj.amount || 9900;
+        const amountCents = typeof obj.amount === 'number' && obj.amount >= 0 ? obj.amount : 9900;
         ledgerEntry = this.paymentRepo.recordLedgerEntry({
           customer_id: customer.id,
           stripe_event_id: eventId,
