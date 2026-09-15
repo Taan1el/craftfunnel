@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { PaymentService } from '../services/payment.service.js';
+import { STRIPE_EVENT_TYPES } from '../../../shared/types.js';
 import crypto from 'node:crypto';
 
-const SIMULATABLE_EVENT_TYPES = new Set(['payment_intent.succeeded', 'invoice.payment_failed', 'charge.refunded']);
+const SIMULATABLE_EVENT_TYPES = new Set<string>(STRIPE_EVENT_TYPES);
 
 export class PaymentController {
   constructor(private paymentService: PaymentService) {}

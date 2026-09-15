@@ -78,8 +78,11 @@ export interface TrackFunnelEventDto {
   metadata?: Record<string, unknown>;
 }
 
+export const STRIPE_EVENT_TYPES = ['payment_intent.succeeded', 'invoice.payment_failed', 'charge.refunded'] as const;
+export type StripeEventType = (typeof STRIPE_EVENT_TYPES)[number];
+
 export interface SimulateStripeWebhookDto {
-  event_type: 'payment_intent.succeeded' | 'invoice.payment_failed' | 'charge.refunded';
+  event_type: StripeEventType;
   customer_id?: string;
   amount_cents?: number;
   idempotency_key?: string;
