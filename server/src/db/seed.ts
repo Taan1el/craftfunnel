@@ -5,7 +5,6 @@ export function seedDatabase(db: DatabaseSync): void {
   const check = db.prepare('SELECT COUNT(*) as count FROM experiments;').get() as { count: number };
   if (check.count > 0) return;
 
-  const now = new Date().toISOString();
   const past7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const past3d = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
   const past1d = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();

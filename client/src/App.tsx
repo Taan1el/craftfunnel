@@ -6,13 +6,14 @@ import type {
   GrowthMetrics,
   PaymentLedgerEntry,
 } from '../../shared/types';
-import { api } from './services/api';
+import { api, isDemoMode } from './services/index.js';
 import { MetricsOverview } from './components/MetricsOverview';
 import { FunnelVisualizer } from './components/FunnelVisualizer';
 import { ExperimentCards } from './components/ExperimentCards';
 import { WebhookSimulator } from './components/WebhookSimulator';
 import { LedgerTable } from './components/LedgerTable';
 import { CustomerDrawer } from './components/CustomerDrawer';
+import { DemoBanner } from './components/DemoBanner';
 import './App.css';
 
 export const App: React.FC = () => {
@@ -26,6 +27,8 @@ export const App: React.FC = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [customerSearch, setCustomerSearch] = useState('');
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
 
   const loadData = useCallback(async () => {
@@ -43,14 +46,19 @@ export const App: React.FC = () => {
       setExperiments(exp);
       setLedgerEntries(led);
       setCustomers(cust);
+      setLoadError(null);
     } catch (err) {
       console.error('Failed to load CraftFunnel data:', err);
+      setLoadError('Could not load dashboard data. The API may be unreachable.');
     }
   }, []);
 
   useEffect(() => {
     setLoading(true);
-    loadData().finally(() => setLoading(false));
+    loadData().finally(() => {
+      setLoading(false);
+      setInitialLoading(false);
+    });
   }, [loadData]);
 
   useEffect(() => {
@@ -58,6 +66,11 @@ export const App: React.FC = () => {
     const interval = setInterval(loadData, 3000);
     return () => clearInterval(interval);
   }, [autoRefresh, loadData]);
+
+  const handleDemoReset = useCallback(() => {
+    setSelectedCustomer(null);
+    loadData();
+  }, [loadData]);
 
   const filteredCustomers = customers.filter(
     (c) =>
@@ -67,6 +80,8 @@ export const App: React.FC = () => {
 
   return (
     <div className="app-container">
+      {isDemoMode && <DemoBanner onReset={handleDemoReset} />}
+
       <MetricsOverview
         metrics={metrics}
         loading={loading}
@@ -75,139 +90,160 @@ export const App: React.FC = () => {
         onToggleAutoRefresh={() => setAutoRefresh((prev) => !prev)}
       />
 
-      <main className="main-content">
-        <div className="content-tabs-bar">
-          <div className="tabs-nav" role="tablist">
-            <button
-              className={`tab-btn ${activeTab === 'growth' ? 'active' : ''}`}
-              onClick={() => setActiveTab('growth')}
-              role="tab"
-              aria-selected={activeTab === 'growth'}
-            >
-              📊 Funnel & A/B Experiments
-            </button>
-            <button
-              className={`tab-btn ${activeTab === 'billing' ? 'active' : ''}`}
-              onClick={() => setActiveTab('billing')}
-              role="tab"
-              aria-selected={activeTab === 'billing'}
-            >
-              💳 Stripe Webhooks & Ledger ({ledgerEntries.length})
-            </button>
-            <button
-              className={`tab-btn ${activeTab === 'customers' ? 'active' : ''}`}
-              onClick={() => setActiveTab('customers')}
-              role="tab"
-              aria-selected={activeTab === 'customers'}
-            >
-              👥 Customers & Lifecycle ({customers.length})
-            </button>
-          </div>
+      {loadError && (
+        <div className="alert-box alert-warning" role="alert">
+          {loadError}{' '}
+          <button type="button" className="link-btn" onClick={loadData}>
+            Retry
+          </button>
         </div>
+      )}
 
-        {activeTab === 'growth' && (
-          <>
-            <FunnelVisualizer steps={funnelSteps} />
-            <ExperimentCards experiments={experiments} onRefresh={loadData} />
-          </>
-        )}
-
-        {activeTab === 'billing' && (
-          <>
-            <WebhookSimulator
-              customers={customers}
-              onReconciliationComplete={loadData}
-            />
-            <LedgerTable entries={ledgerEntries} />
-          </>
-        )}
-
-        {activeTab === 'customers' && (
-          <div className="customers-section">
-            <div className="list-toolbar">
-              <input
-                type="search"
-                placeholder="Search customers by name or email..."
-                value={customerSearch}
-                onChange={(e) => setCustomerSearch(e.target.value)}
-                className="form-input search-input"
-                aria-label="Search customers"
-              />
+      {initialLoading ? (
+        <div className="loading-state" role="status">
+          Loading CraftFunnel dashboard...
+        </div>
+      ) : (
+        <main className="main-content">
+          <div className="content-tabs-bar">
+            <div className="tabs-nav" role="tablist" aria-label="Dashboard sections">
+              <button
+                id="tab-growth"
+                className={`tab-btn ${activeTab === 'growth' ? 'active' : ''}`}
+                onClick={() => setActiveTab('growth')}
+                role="tab"
+                aria-selected={activeTab === 'growth'}
+                aria-controls="panel-growth"
+              >
+                📊 Funnel & A/B Experiments
+              </button>
+              <button
+                id="tab-billing"
+                className={`tab-btn ${activeTab === 'billing' ? 'active' : ''}`}
+                onClick={() => setActiveTab('billing')}
+                role="tab"
+                aria-selected={activeTab === 'billing'}
+                aria-controls="panel-billing"
+              >
+                💳 Stripe Webhooks & Ledger ({ledgerEntries.length})
+              </button>
+              <button
+                id="tab-customers"
+                className={`tab-btn ${activeTab === 'customers' ? 'active' : ''}`}
+                onClick={() => setActiveTab('customers')}
+                role="tab"
+                aria-selected={activeTab === 'customers'}
+                aria-controls="panel-customers"
+              >
+                👥 Customers & Lifecycle ({customers.length})
+              </button>
             </div>
+          </div>
 
-            <div className="table-responsive">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Customer Name</th>
-                    <th>Email</th>
-                    <th>Status</th>
-                    <th>MRR</th>
-                    <th>Created</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredCustomers.length === 0 ? (
+          {activeTab === 'growth' && (
+            <div id="panel-growth" role="tabpanel" aria-labelledby="tab-growth">
+              <FunnelVisualizer steps={funnelSteps} />
+              <ExperimentCards experiments={experiments} onRefresh={loadData} />
+            </div>
+          )}
+
+          {activeTab === 'billing' && (
+            <div id="panel-billing" role="tabpanel" aria-labelledby="tab-billing">
+              <WebhookSimulator customers={customers} onReconciliationComplete={loadData} />
+              <LedgerTable entries={ledgerEntries} />
+            </div>
+          )}
+
+          {activeTab === 'customers' && (
+            <div id="panel-customers" role="tabpanel" aria-labelledby="tab-customers" className="customers-section">
+              <div className="list-toolbar">
+                <label htmlFor="customer-search" className="visually-hidden">
+                  Search customers by name or email
+                </label>
+                <input
+                  id="customer-search"
+                  type="search"
+                  placeholder="Search customers by name or email..."
+                  value={customerSearch}
+                  onChange={(e) => setCustomerSearch(e.target.value)}
+                  className="form-input search-input"
+                />
+              </div>
+
+              <div className="table-responsive">
+                <table className="data-table">
+                  <thead>
                     <tr>
-                      <td colSpan={6} className="table-empty">
-                        No customers match your search criteria.
-                      </td>
+                      <th>Customer Name</th>
+                      <th>Email</th>
+                      <th>Status</th>
+                      <th>MRR</th>
+                      <th>Created</th>
+                      <th>Action</th>
                     </tr>
-                  ) : (
-                    filteredCustomers.map((cust) => (
-                      <tr
-                        key={cust.id}
-                        className="clickable-row"
-                        onClick={() => setSelectedCustomer(cust)}
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') setSelectedCustomer(cust);
-                        }}
-                      >
-                        <td>
-                          <strong>{cust.name}</strong>
-                        </td>
-                        <td className="font-mono text-xs">{cust.email}</td>
-                        <td>
-                          <span className={`badge badge-${cust.status}`}>
-                            {cust.status.toUpperCase()}
-                          </span>
-                        </td>
-                        <td>
-                          <span className="font-bold text-success">
-                            €{(cust.mrr_cents / 100).toFixed(2)}
-                          </span>
-                        </td>
-                        <td className="text-xs text-muted">
-                          {new Date(cust.created_at).toLocaleDateString()}
-                        </td>
-                        <td>
-                          <button
-                            className="btn btn-secondary btn-xs"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedCustomer(cust);
-                            }}
-                            aria-label={`Inspect customer ${cust.name}`}
-                          >
-                            Inspect Profile
-                          </button>
+                  </thead>
+                  <tbody>
+                    {customers.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="table-empty">
+                          No customers yet.
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : filteredCustomers.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="table-empty">
+                          No customers match your search criteria.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredCustomers.map((cust) => (
+                        <tr
+                          key={cust.id}
+                          className="clickable-row"
+                          onClick={() => setSelectedCustomer(cust)}
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              setSelectedCustomer(cust);
+                            }
+                          }}
+                        >
+                          <td>
+                            <strong>{cust.name}</strong>
+                          </td>
+                          <td className="font-mono text-xs">{cust.email}</td>
+                          <td>
+                            <span className={`badge badge-${cust.status}`}>{cust.status.toUpperCase()}</span>
+                          </td>
+                          <td>
+                            <span className="font-bold text-success">€{(cust.mrr_cents / 100).toFixed(2)}</span>
+                          </td>
+                          <td className="text-xs text-muted">{new Date(cust.created_at).toLocaleDateString()}</td>
+                          <td>
+                            <button
+                              className="btn btn-secondary btn-xs"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedCustomer(cust);
+                              }}
+                              aria-label={`Inspect customer ${cust.name}`}
+                            >
+                              Inspect Profile
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
-        )}
-      </main>
+          )}
+        </main>
+      )}
 
-      <CustomerDrawer
-        customer={selectedCustomer}
-        onClose={() => setSelectedCustomer(null)}
-      />
+      <CustomerDrawer customer={selectedCustomer} onClose={() => setSelectedCustomer(null)} />
     </div>
   );
 };

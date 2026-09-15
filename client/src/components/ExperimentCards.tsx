@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { Experiment } from '../../../shared/types';
-import { api } from '../services/api';
+import { api } from '../services/index.js';
 
 interface ExperimentCardsProps {
   experiments: Experiment[];

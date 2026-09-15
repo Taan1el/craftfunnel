@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { Customer } from '../../../shared/types';
-import { api } from '../services/api';
+import { api } from '../services/index.js';
 
 interface CustomerDrawerProps {
   customer: Customer | null;
@@ -10,6 +10,7 @@ interface CustomerDrawerProps {
 export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClose }) => {
   const [timeline, setTimeline] = useState<{ events: any[]; allocations: any[]; ledger: any[] } | null>(null);
   const [loading, setLoading] = useState(false);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!customer) {
@@ -25,6 +26,17 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClos
       .finally(() => setLoading(false));
   }, [customer]);
 
+  useEffect(() => {
+    if (!customer) return;
+    closeButtonRef.current?.focus();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [customer, onClose]);
+
   if (!customer) return null;
 
   return (
@@ -36,7 +48,7 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClos
             <h2 id="drawer-title" className="drawer-title">{customer.name}</h2>
             <span className="text-xs text-muted font-mono">{customer.email}</span>
           </div>
-          <button className="btn-icon" onClick={onClose} aria-label="Close profile drawer">✕</button>
+          <button ref={closeButtonRef} className="btn-icon" onClick={onClose} aria-label="Close profile drawer">✕</button>
         </div>
 
         <div className="drawer-body">
