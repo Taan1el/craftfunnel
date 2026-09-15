@@ -1,9 +1,13 @@
 import express, { Express } from 'express';
 import cors from 'cors';
+import path from 'node:path';
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
 import { createDatabase } from './db/database.js';
 import { initializeSchema } from './db/schema.js';
 import { seedDatabase } from './db/seed.js';
+import { findPackageDir } from './lib/repoPaths.js';
 
 import { ExperimentRepository } from './repositories/experiment.repository.js';
 import { FunnelRepository } from './repositories/funnel.repository.js';
@@ -71,6 +75,28 @@ export function createApp(dbPath?: string, shouldSeed = true): AppContext {
   app.use('/api', createFunnelRoutes(funnelController));
   app.use('/api', createPaymentRoutes(paymentController));
   app.use('/api', createCustomerRoutes(customerController));
+
+  // No route above matched: reply with a plain 404 instead of falling
+  // through to the SPA fallback below and returning index.html for a bad
+  // API path.
+  app.use('/api', (_req, res) => {
+    res.status(404).json({ success: false, error: 'Not found' });
+  });
+
+  // Serve the built client (client/dist) if present, so the same container
+  // that runs the API also serves the dashboard. Resolved by package
+  // identity rather than a fixed relative depth, since this file's own
+  // directory depth differs between `tsx` (dev, server/src/) and the
+  // compiled build (server/dist/server/src/, see server/tsconfig.json).
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const repoRootDir = findPackageDir(__dirname, 'craftfunnel');
+  const clientDistPath = path.resolve(repoRootDir, 'client', 'dist');
+  if (fs.existsSync(clientDistPath)) {
+    app.use(express.static(clientDistPath));
+    app.get('*', (_req, res) => {
+      res.sendFile(path.resolve(clientDistPath, 'index.html'));
+    });
+  }
 
   app.use(errorHandler);
 
