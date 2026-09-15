@@ -13,10 +13,8 @@ export class CustomerService {
   }
 
   getTimeline(id: string) {
+    const customer = this.customerRepo.getCustomerById(id);
+    if (!customer) return null;
     return this.customerRepo.getCustomerTimeline(id);
-  }
-
-  createCustomer(name: string, email: string): Customer {
-    return this.customerRepo.createCustomer(name, email);
   }
 }

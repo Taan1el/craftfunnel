@@ -201,6 +201,12 @@ describe('CraftFunnel API & Growth Engine Tests', () => {
       expect(res.body.data).toHaveProperty('ledger');
     });
 
+    it('GET /api/customers/:id/timeline returns 404 for an unknown customer', async () => {
+      const res = await request(ctx.app).get('/api/customers/cust_does_not_exist/timeline');
+      expect(res.status).toBe(404);
+      expect(res.body.success).toBe(false);
+    });
+
     it('does not attribute an unresolvable webhook event to an arbitrary customer', async () => {
       const res = await request(ctx.app)
         .post('/api/payments/webhook')

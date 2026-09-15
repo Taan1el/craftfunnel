@@ -31,6 +31,10 @@ export class CustomerController {
     try {
       const { id } = req.params;
       const timeline = this.customerService.getTimeline(id);
+      if (!timeline) {
+        res.status(404).json({ success: false, error: 'Customer not found' });
+        return;
+      }
       res.json({ success: true, data: timeline });
     } catch (err) {
       next(err);

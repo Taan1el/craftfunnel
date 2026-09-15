@@ -1,5 +1,4 @@
 import { DatabaseSync } from 'node:sqlite';
-import crypto from 'node:crypto';
 import { Customer, CustomerStatus } from '../../../shared/types.js';
 
 export class CustomerRepository {
@@ -32,19 +31,6 @@ export class CustomerRepository {
       mrr_cents: Number(r.mrr_cents),
       created_at: r.created_at,
     };
-  }
-
-  createCustomer(name: string, email: string): Customer {
-    const id = crypto.randomUUID();
-    const nowIso = new Date().toISOString();
-
-    const stmt = this.db.prepare(`
-      INSERT INTO customers (id, email, name, status, mrr_cents, created_at)
-      VALUES (?, ?, ?, 'lead', 0, ?);
-    `);
-    stmt.run(id, email, name, nowIso);
-
-    return this.getCustomerById(id)!;
   }
 
   updateStatus(id: string, status: CustomerStatus, mrrCents?: number): void {
