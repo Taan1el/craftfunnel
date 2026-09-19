@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { BarChart3, CreditCard, Users, Search } from 'lucide-react';
 import type {
   Customer,
   Experiment,
@@ -7,13 +8,15 @@ import type {
   PaymentLedgerEntry,
 } from '../../shared/types';
 import { api, isDemoMode } from './services/index.js';
-import { MetricsOverview } from './components/MetricsOverview';
+import { Header } from './components/Header';
+import { StatsBar } from './components/StatsBar';
 import { FunnelVisualizer } from './components/FunnelVisualizer';
 import { ExperimentCards } from './components/ExperimentCards';
 import { WebhookSimulator } from './components/WebhookSimulator';
 import { LedgerTable } from './components/LedgerTable';
 import { CustomerDrawer } from './components/CustomerDrawer';
 import { DemoBanner } from './components/DemoBanner';
+import { pluralize } from './utils/pluralize.js';
 import './App.css';
 
 export const App: React.FC = () => {
@@ -82,17 +85,16 @@ export const App: React.FC = () => {
     <div className="app-container">
       {isDemoMode && <DemoBanner onReset={handleDemoReset} />}
 
-      <MetricsOverview
-        metrics={metrics}
-        loading={loading}
+      <Header
         onRefresh={loadData}
+        loading={loading}
         autoRefresh={autoRefresh}
         onToggleAutoRefresh={() => setAutoRefresh((prev) => !prev)}
       />
 
       {loadError && (
-        <div className="alert-box alert-warning" role="alert">
-          {loadError}{' '}
+        <div className="alert alert-error" role="alert" style={{ maxWidth: 1200, margin: '1rem auto 0', width: '100%' }}>
+          <span className="alert-message">{loadError}</span>
           <button type="button" className="link-btn" onClick={loadData}>
             Retry
           </button>
@@ -101,11 +103,13 @@ export const App: React.FC = () => {
 
       {initialLoading ? (
         <div className="loading-state" role="status">
-          Loading CraftFunnel dashboard...
+          Loading CraftFunnel dashboard.
         </div>
       ) : (
-        <main className="main-content">
-          <div className="content-tabs-bar">
+        <main className="app-main">
+          <StatsBar metrics={metrics} />
+
+          <div>
             <div className="tabs-nav" role="tablist" aria-label="Dashboard sections">
               <button
                 id="tab-growth"
@@ -115,7 +119,8 @@ export const App: React.FC = () => {
                 aria-selected={activeTab === 'growth'}
                 aria-controls="panel-growth"
               >
-                📊 Funnel & A/B Experiments
+                <BarChart3 size={16} aria-hidden="true" />
+                Funnel &amp; experiments
               </button>
               <button
                 id="tab-billing"
@@ -125,7 +130,8 @@ export const App: React.FC = () => {
                 aria-selected={activeTab === 'billing'}
                 aria-controls="panel-billing"
               >
-                💳 Stripe Webhooks & Ledger ({ledgerEntries.length})
+                <CreditCard size={16} aria-hidden="true" />
+                Billing ({ledgerEntries.length})
               </button>
               <button
                 id="tab-customers"
@@ -135,113 +141,122 @@ export const App: React.FC = () => {
                 aria-selected={activeTab === 'customers'}
                 aria-controls="panel-customers"
               >
-                👥 Customers & Lifecycle ({customers.length})
+                <Users size={16} aria-hidden="true" />
+                {customers.length} {pluralize(customers.length, 'customer')}
               </button>
             </div>
-          </div>
 
-          {activeTab === 'growth' && (
-            <div id="panel-growth" role="tabpanel" aria-labelledby="tab-growth">
-              <FunnelVisualizer steps={funnelSteps} />
-              <ExperimentCards experiments={experiments} onRefresh={loadData} />
-            </div>
-          )}
-
-          {activeTab === 'billing' && (
-            <div id="panel-billing" role="tabpanel" aria-labelledby="tab-billing">
-              <WebhookSimulator customers={customers} onReconciliationComplete={loadData} />
-              <LedgerTable entries={ledgerEntries} />
-            </div>
-          )}
-
-          {activeTab === 'customers' && (
-            <div id="panel-customers" role="tabpanel" aria-labelledby="tab-customers" className="customers-section">
-              <div className="list-toolbar">
-                <label htmlFor="customer-search" className="visually-hidden">
-                  Search customers by name or email
-                </label>
-                <input
-                  id="customer-search"
-                  type="search"
-                  placeholder="Search customers by name or email..."
-                  value={customerSearch}
-                  onChange={(e) => setCustomerSearch(e.target.value)}
-                  className="form-input search-input"
-                />
+            {activeTab === 'growth' && (
+              <div id="panel-growth" role="tabpanel" aria-labelledby="tab-growth" className="tab-panel">
+                <FunnelVisualizer steps={funnelSteps} />
+                <ExperimentCards experiments={experiments} onRefresh={loadData} />
               </div>
+            )}
 
-              <div className="table-responsive">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Customer Name</th>
-                      <th>Email</th>
-                      <th>Status</th>
-                      <th>MRR</th>
-                      <th>Created</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {customers.length === 0 ? (
+            {activeTab === 'billing' && (
+              <div id="panel-billing" role="tabpanel" aria-labelledby="tab-billing" className="tab-panel">
+                <div className="billing-split">
+                  <WebhookSimulator customers={customers} onReconciliationComplete={loadData} />
+                  <LedgerTable entries={ledgerEntries} />
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'customers' && (
+              <div id="panel-customers" role="tabpanel" aria-labelledby="tab-customers" className="tab-panel">
+                <div className="section-header">
+                  <h2 className="section-heading">Customers</h2>
+                  <p className="section-description">
+                    {customers.length} {pluralize(customers.length, 'customer')} in the lifecycle. Select a row to inspect a
+                    profile.
+                  </p>
+                </div>
+
+                <div className="list-toolbar">
+                  <div className="search-field">
+                    <Search size={16} aria-hidden="true" />
+                    <label htmlFor="customer-search" className="sr-only">
+                      Search customers by name or email
+                    </label>
+                    <input
+                      id="customer-search"
+                      type="search"
+                      placeholder="Search by name or email"
+                      value={customerSearch}
+                      onChange={(e) => setCustomerSearch(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="table-wrapper">
+                  <table className="data-table">
+                    <thead>
                       <tr>
-                        <td colSpan={6} className="table-empty">
-                          No customers yet.
-                        </td>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Status</th>
+                        <th>MRR</th>
+                        <th>Created</th>
                       </tr>
-                    ) : filteredCustomers.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="table-empty">
-                          No customers match your search criteria.
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredCustomers.map((cust) => (
-                        <tr
-                          key={cust.id}
-                          className="clickable-row"
-                          onClick={() => setSelectedCustomer(cust)}
-                          tabIndex={0}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              setSelectedCustomer(cust);
-                            }
-                          }}
-                        >
-                          <td>
-                            <strong>{cust.name}</strong>
-                          </td>
-                          <td className="font-mono text-xs">{cust.email}</td>
-                          <td>
-                            <span className={`badge badge-${cust.status}`}>{cust.status.toUpperCase()}</span>
-                          </td>
-                          <td>
-                            <span className="font-bold text-success">€{(cust.mrr_cents / 100).toFixed(2)}</span>
-                          </td>
-                          <td className="text-xs text-muted">{new Date(cust.created_at).toLocaleDateString()}</td>
-                          <td>
-                            <button
-                              className="btn btn-secondary btn-xs"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedCustomer(cust);
-                              }}
-                              aria-label={`Inspect customer ${cust.name}`}
-                            >
-                              Inspect Profile
-                            </button>
+                    </thead>
+                    <tbody>
+                      {customers.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="table-empty">
+                            No customers yet.
                           </td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                      ) : filteredCustomers.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="table-empty">
+                            No customers match "{customerSearch}".
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredCustomers.map((cust) => (
+                          <tr
+                            key={cust.id}
+                            className="clickable-row"
+                            onClick={() => setSelectedCustomer(cust)}
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                setSelectedCustomer(cust);
+                              }
+                            }}
+                          >
+                            <td>{cust.name}</td>
+                            <td className="mono" style={{ fontSize: 13 }}>
+                              {cust.email}
+                            </td>
+                            <td>
+                              <span className="badge">{cust.status}</span>
+                            </td>
+                            <td className={`amount-cell ${cust.mrr_cents > 0 ? 'is-positive' : ''}`}>
+                              &euro;{(cust.mrr_cents / 100).toFixed(2)}
+                            </td>
+                            <td style={{ fontSize: 13, color: 'var(--ink-2)' }}>
+                              {new Date(cust.created_at).toLocaleDateString()}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </main>
       )}
+
+      <footer className="app-footer">
+        <span>MIT licensed</span>
+        <a href="https://github.com/Taan1el/craftfunnel" target="_blank" rel="noreferrer">
+          Source on GitHub
+        </a>
+      </footer>
 
       <CustomerDrawer customer={selectedCustomer} onClose={() => setSelectedCustomer(null)} />
     </div>

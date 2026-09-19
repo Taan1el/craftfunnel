@@ -96,11 +96,10 @@ describe('CraftFunnel Frontend Dashboard', () => {
     vi.mocked(api.getLedger).mockResolvedValue(mockLedger);
   });
 
-  it('renders brand heading and growth metrics cards', async () => {
+  it('renders the brand heading and the stats strip', async () => {
     render(<App />);
 
-    expect(screen.getByText('CraftFunnel')).toBeInTheDocument();
-    expect(screen.getByText('SaaS Growth Engine, A/B Testing Allocator & Stripe Reconciliation')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'CraftFunnel' })).toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.getByText('€297')).toBeInTheDocument(); // MRR
@@ -108,50 +107,50 @@ describe('CraftFunnel Frontend Dashboard', () => {
     });
   });
 
-  it('renders acquisition funnel visualizer with step dropoffs', async () => {
+  it('renders the acquisition funnel with step drop-offs', async () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByText('SaaS Customer Acquisition Funnel')).toBeInTheDocument();
+      expect(screen.getByText('Acquisition funnel')).toBeInTheDocument();
       expect(screen.getByText('1. Landing Page Visit')).toBeInTheDocument();
       expect(screen.getAllByText('5. Paid Subscription').length).toBeGreaterThan(0);
     });
   });
 
-  it('renders A/B experiment card with statistical significance', async () => {
+  it('renders an A/B experiment row with statistical significance', async () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByText('3-Step Guided Wizard vs Single Page')).toBeInTheDocument();
-      expect(screen.getByText('🏆 Statistically Significant (>95%)')).toBeInTheDocument();
+      expect(screen.getAllByText('3-Step Guided Wizard vs Single Page').length).toBeGreaterThan(0);
+      expect(screen.getByText('Significant at 95%')).toBeInTheDocument();
       expect(screen.getByText('2.71')).toBeInTheDocument(); // Z-score
     });
   });
 
-  it('switches to Stripe Webhooks tab and renders reconciliation simulator and ledger', async () => {
+  it('switches to the billing tab and renders the webhook form and ledger', async () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByText(/Stripe Webhooks & Ledger/i)).toBeInTheDocument();
+      expect(screen.getByText(/Billing \(/i)).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByText(/Stripe Webhooks & Ledger/i));
+    fireEvent.click(screen.getByText(/Billing \(/i));
 
     await waitFor(() => {
-      expect(screen.getByText('Stripe Webhook & Financial Reconciliation Simulator')).toBeInTheDocument();
-      expect(screen.getByText('Financial Transaction Ledger')).toBeInTheDocument();
+      expect(screen.getByText('Fire a Stripe webhook')).toBeInTheDocument();
+      expect(screen.getByText('Payment ledger')).toBeInTheDocument();
       expect(screen.getByText('+€99.00')).toBeInTheDocument();
     });
   });
 
-  it('switches to Customers tab and displays customer directory', async () => {
+  it('switches to the customers tab and displays the customer directory', async () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByText(/Customers & Lifecycle/i)).toBeInTheDocument();
+      expect(screen.getByText(/2 customers/i)).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByText(/Customers & Lifecycle/i));
+    fireEvent.click(screen.getByText(/2 customers/i));
 
     await waitFor(() => {
       expect(screen.getByText('Kristjan Kallas')).toBeInTheDocument();

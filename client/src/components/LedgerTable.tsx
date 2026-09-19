@@ -5,26 +5,28 @@ interface LedgerTableProps {
   entries: PaymentLedgerEntry[];
 }
 
+const statusTone: Record<PaymentLedgerEntry['status'], 'ok' | 'warn' | 'bad'> = {
+  settled: 'ok',
+  refunded: 'warn',
+  failed: 'bad',
+};
+
 export const LedgerTable: React.FC<LedgerTableProps> = ({ entries }) => {
   return (
-    <div className="ledger-section">
+    <div className="billing-results">
       <div className="section-header">
-        <div>
-          <h3 className="section-heading">Financial Transaction Ledger</h3>
-          <p className="section-subheading">
-            Double-entry reconciled journal of webhook events processed through payment providers.
-          </p>
-        </div>
+        <h2 className="section-heading">Payment ledger</h2>
+        <p className="section-description">Reconciled webhook events, newest first.</p>
       </div>
 
-      <div className="table-responsive">
+      <div className="table-wrapper">
         <table className="data-table">
           <thead>
             <tr>
-              <th>Timestamp</th>
+              <th>Time</th>
               <th>Customer</th>
-              <th>Stripe Event ID</th>
-              <th>Event Type</th>
+              <th>Event id</th>
+              <th>Event type</th>
               <th>Amount</th>
               <th>Status</th>
               <th>Invoice</th>
@@ -34,7 +36,7 @@ export const LedgerTable: React.FC<LedgerTableProps> = ({ entries }) => {
             {entries.length === 0 ? (
               <tr>
                 <td colSpan={7} className="table-empty">
-                  No payment ledger transactions recorded yet. Fire a test webhook above to reconcile!
+                  No payment ledger entries yet. Fire a test webhook to reconcile one.
                 </td>
               </tr>
             ) : (
@@ -44,30 +46,27 @@ export const LedgerTable: React.FC<LedgerTableProps> = ({ entries }) => {
 
                 return (
                   <tr key={entry.id}>
-                    <td className="text-xs text-muted">
+                    <td className="mono" style={{ fontSize: 13 }}>
                       {new Date(entry.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                     </td>
-                    <td>
-                      <span className="customer-email-cell">{entry.customer_email || entry.customer_id}</span>
+                    <td>{entry.customer_email || entry.customer_id}</td>
+                    <td className="mono" style={{ fontSize: 13 }}>
+                      {entry.stripe_event_id}
+                    </td>
+                    <td className="mono" style={{ fontSize: 13 }}>
+                      {entry.event_type}
+                    </td>
+                    <td className={`amount-cell ${isNegative ? 'is-negative' : 'is-positive'}`}>
+                      {isNegative ? `-€${amountFormatted}` : `+€${amountFormatted}`}
                     </td>
                     <td>
-                      <code className="font-mono text-xs">{entry.stripe_event_id}</code>
-                    </td>
-                    <td>
-                      <span className="event-pill">{entry.event_type}</span>
-                    </td>
-                    <td>
-                      <strong className={isNegative ? 'text-danger' : 'text-success'}>
-                        {isNegative ? `-€${amountFormatted}` : `+€${amountFormatted}`}
-                      </strong>
-                    </td>
-                    <td>
-                      <span className={`badge badge-${entry.status}`}>
-                        {entry.status.toUpperCase()}
+                      <span className="badge">
+                        <span className={`status-dot ${statusTone[entry.status]}`} aria-hidden="true" />
+                        {entry.status}
                       </span>
                     </td>
-                    <td className="text-xs text-muted font-mono">
-                      {entry.invoice_id || '--'}
+                    <td className="mono" style={{ fontSize: 13, color: 'var(--ink-3)' }}>
+                      {entry.invoice_id || '-'}
                     </td>
                   </tr>
                 );

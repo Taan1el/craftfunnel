@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Dices } from 'lucide-react';
 import type { Customer } from '../../../shared/types';
 import { api } from '../services/index.js';
 
@@ -7,10 +8,7 @@ interface WebhookSimulatorProps {
   onReconciliationComplete: () => void;
 }
 
-export const WebhookSimulator: React.FC<WebhookSimulatorProps> = ({
-  customers,
-  onReconciliationComplete,
-}) => {
+export const WebhookSimulator: React.FC<WebhookSimulatorProps> = ({ customers, onReconciliationComplete }) => {
   const [eventType, setEventType] = useState('payment_intent.succeeded');
   const [customerId, setCustomerId] = useState(customers[0]?.id || '');
   // Kept as a string (rather than a number) so the field can actually go
@@ -21,7 +19,7 @@ export const WebhookSimulator: React.FC<WebhookSimulatorProps> = ({
   const [amountEurInput, setAmountEurInput] = useState('99');
   const [idempotencyKey, setIdempotencyKey] = useState(`evt_stripe_${Math.random().toString(36).substring(2, 9)}`);
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<string | null>(null);
+  const [result, setResult] = useState<{ message: string; tone: 'success' | 'warn' } | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
 
   // customers loads asynchronously after this component can already be
@@ -64,118 +62,111 @@ export const WebhookSimulator: React.FC<WebhookSimulatorProps> = ({
       });
 
       if (res.duplicate) {
-        setResult(
-          `⚠️ Idempotency Guard Triggered: Stripe Event ID '${idempotencyKey}' was previously reconciled. Skipping ledger update to prevent duplicate charges.`
-        );
+        setResult({
+          tone: 'warn',
+          message: `Stripe event "${idempotencyKey}" was already reconciled, so this retry was skipped.`,
+        });
       } else {
-        setResult(
-          `✅ Successfully reconciled Stripe webhook '${eventType}'! Ledger Entry #${res.ledger?.id.substring(0, 8)} recorded with status '${res.ledger?.status}'.`
-        );
+        setResult({
+          tone: 'success',
+          message: `Successfully reconciled "${eventType}". Ledger entry ${res.ledger?.id.substring(0, 8)} recorded as ${res.ledger?.status}.`,
+        });
       }
       onReconciliationComplete();
-    } catch (err: any) {
-      setResult(`Webhook failure: ${err.message}`);
+    } catch (err) {
+      setResult({ tone: 'warn', message: `Webhook failure: ${(err as Error).message}` });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="webhook-sim-card">
-      <div className="sim-header">
-        <h3 className="sim-heading">Stripe Webhook & Financial Reconciliation Simulator</h3>
-        <p className="sim-sub">
-          Test real-time webhook ingestion, double-entry ledger settlement, and idempotency deduplication.
-        </p>
-      </div>
+    <div className="form-column">
+      <h3 className="form-column-title">Fire a Stripe webhook</h3>
+      <p className="form-column-description">
+        Sends a Stripe-shaped event to the reconciliation endpoint and records it in the ledger.
+      </p>
 
       {customers.length === 0 ? (
-        <p className="empty-subtext">No customers yet, so there is nothing to bill. Customers appear here once seeded.</p>
+        <p className="empty-note">No customers yet, so there is nothing to bill.</p>
       ) : (
-        <form onSubmit={handleSendWebhook} className="sim-form">
-          <div className="form-row">
-            <div className="form-group flex-1">
-              <label htmlFor="sim-event-type">Stripe Event Type</label>
-              <select
-                id="sim-event-type"
-                value={eventType}
-                onChange={(e) => setEventType(e.target.value)}
-                className="form-input"
-              >
-                <option value="payment_intent.succeeded">💳 payment_intent.succeeded (Settled)</option>
-                <option value="invoice.payment_failed">❌ invoice.payment_failed (Failed)</option>
-                <option value="charge.refunded">↩️ charge.refunded (Reversed)</option>
-              </select>
-            </div>
-
-            <div className="form-group flex-1">
-              <label htmlFor="sim-customer">Customer</label>
-              <select
-                id="sim-customer"
-                value={customerId}
-                onChange={(e) => setCustomerId(e.target.value)}
-                className="form-input"
-              >
-                {customers.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} ({c.email}) - {c.status.toUpperCase()}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group flex-sm">
-              <label htmlFor="sim-amount">Amount (EUR)</label>
-              <input
-                id="sim-amount"
-                type="number"
-                min="1"
-                max="5000"
-                step="1"
-                value={amountEurInput}
-                onChange={(e) => setAmountEurInput(e.target.value)}
-                className="form-input"
-                aria-invalid={validationError ? true : undefined}
-              />
-            </div>
+        <form onSubmit={handleSendWebhook}>
+          <div className="field">
+            <label className="field-label" htmlFor="sim-event-type">
+              Event type
+            </label>
+            <select id="sim-event-type" value={eventType} onChange={(e) => setEventType(e.target.value)} className="form-input">
+              <option value="payment_intent.succeeded">payment_intent.succeeded</option>
+              <option value="invoice.payment_failed">invoice.payment_failed</option>
+              <option value="charge.refunded">charge.refunded</option>
+            </select>
           </div>
 
-          <div className="form-row">
-            <div className="form-group flex-1">
-              <div className="label-with-action">
-                <label htmlFor="sim-idempotency">Stripe Event ID (Idempotency Key)</label>
-                <button type="button" className="link-btn" onClick={handleGenerateKey}>
-                  🎲 New ID
-                </button>
-              </div>
+          <div className="field">
+            <label className="field-label" htmlFor="sim-customer">
+              Customer
+            </label>
+            <select id="sim-customer" value={customerId} onChange={(e) => setCustomerId(e.target.value)} className="form-input">
+              {customers.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} ({c.status})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="field">
+            <label className="field-label" htmlFor="sim-amount">
+              Amount (EUR)
+            </label>
+            <input
+              id="sim-amount"
+              type="number"
+              min="1"
+              max="5000"
+              step="1"
+              value={amountEurInput}
+              onChange={(e) => setAmountEurInput(e.target.value)}
+              className="form-input mono"
+              aria-invalid={validationError ? true : undefined}
+            />
+          </div>
+
+          <div className="field">
+            <div className="field-row" style={{ justifyContent: 'space-between', alignItems: 'baseline' }}>
+              <label className="field-label" htmlFor="sim-idempotency">
+                Stripe event id
+              </label>
+            </div>
+            <div className="field-row">
               <input
                 id="sim-idempotency"
                 type="text"
                 value={idempotencyKey}
                 onChange={(e) => setIdempotencyKey(e.target.value)}
-                className="form-input font-mono"
+                className="form-input mono"
               />
-            </div>
-
-            <div className="form-group flex-actions">
-              <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
-                {loading ? 'Reconciling...' : '⚡ Fire Stripe Webhook'}
+              <button type="button" className="btn btn-secondary" onClick={handleGenerateKey} title="Generate a new event id">
+                <Dices size={16} aria-hidden="true" />
               </button>
             </div>
           </div>
 
+          <div className="form-actions">
+            <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
+              {loading ? 'Reconciling' : 'Fire Stripe webhook'}
+            </button>
+          </div>
+
           {validationError && (
-            <div className="alert-box alert-warning" role="alert">
+            <div className="result-note is-error" role="alert">
               {validationError}
             </div>
           )}
 
           {result && (
-            <div
-              className={`alert-box ${result.startsWith('✅') ? 'alert-success' : 'alert-warning'}`}
-              role="status"
-            >
-              {result}
+            <div className={`result-note ${result.tone === 'success' ? 'is-success' : ''}`} role="status">
+              {result.message}
             </div>
           )}
         </form>

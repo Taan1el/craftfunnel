@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Dices } from 'lucide-react';
 import type { Experiment } from '../../../shared/types';
 import { api } from '../services/index.js';
 
@@ -8,171 +9,196 @@ interface ExperimentCardsProps {
 }
 
 export const ExperimentCards: React.FC<ExperimentCardsProps> = ({ experiments, onRefresh }) => {
+  const [selectedKey, setSelectedKey] = useState(experiments[0]?.key ?? '');
   const [testUserId, setTestUserId] = useState('usr_sample_99');
-  const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<{ message: string; tone: 'info' | 'error' | 'success' } | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const activeKey = selectedKey || experiments[0]?.key || '';
 
   const handleGenerateId = () => {
     setTestUserId(`usr_${Math.random().toString(36).substring(2, 9)}`);
-    setActionFeedback(null);
+    setFeedback(null);
   };
 
-  const handleEvaluate = async (expKey: string) => {
+  const handleEvaluate = async () => {
+    if (!activeKey) return;
     setLoading(true);
-    setActionFeedback(null);
+    setFeedback(null);
     try {
-      const res = await api.evaluateExperiment(expKey, testUserId);
-      setActionFeedback(
-        `Deterministic Hash: User '${testUserId}' assigned to variant '${res.variant.toUpperCase()}' (${res.isNew ? 'New Allocation' : 'Cached Persisted Allocation'})`
-      );
+      const res = await api.evaluateExperiment(activeKey, testUserId);
+      setFeedback({
+        tone: 'success',
+        message: `${testUserId} assigned to variant "${res.variant}" (${res.isNew ? 'new allocation' : 'existing allocation'}).`,
+      });
       onRefresh();
-    } catch (err: any) {
-      setActionFeedback(`Evaluation error: ${err.message}`);
+    } catch (err) {
+      setFeedback({ tone: 'error', message: `Evaluation failed: ${(err as Error).message}` });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleConvert = async (expKey: string) => {
+  const handleConvert = async () => {
+    if (!activeKey) return;
     setLoading(true);
     try {
-      const res = await api.convertExperiment(expKey, testUserId);
-      if (res.converted) {
-        setActionFeedback(`Conversion recorded for user '${testUserId}'!`);
-      } else {
-        setActionFeedback(`User '${testUserId}' already converted or not yet allocated.`);
-      }
+      const res = await api.convertExperiment(activeKey, testUserId);
+      setFeedback({
+        tone: res.converted ? 'success' : 'info',
+        message: res.converted
+          ? `Conversion recorded for ${testUserId}.`
+          : `${testUserId} has no allocation yet, or already converted.`,
+      });
       onRefresh();
-    } catch (err: any) {
-      setActionFeedback(`Conversion error: ${err.message}`);
+    } catch (err) {
+      setFeedback({ tone: 'error', message: `Conversion failed: ${(err as Error).message}` });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="experiments-section">
+    <div>
       <div className="section-header">
-        <div>
-          <h2 className="section-heading">A/B Testing & Statistical Experimentation</h2>
-          <p className="section-subheading">
-            Deterministic variant hashing (<code>SHA256(userId + experimentKey) % 100</code>) with real-time 2-proportion Z-score significance testing.
-          </p>
-        </div>
+        <h2 className="section-heading">A/B experiments</h2>
+        <p className="section-description">
+          Variant allocation is deterministic: <code>SHA256(userId + experimentKey) mod 100</code>. Significance is a
+          two-proportion Z-test, reported once both variants have at least 10 visitors.
+        </p>
       </div>
 
-      <div className="experiments-grid">
-        {experiments.map((exp) => {
-          const control = exp.variants.find((v) => v.key === 'control');
-          const treatment = exp.variants.find((v) => v.key !== 'control');
-          const lift =
-            control && treatment && control.conversion_rate > 0
-              ? Math.round(((treatment.conversion_rate - control.conversion_rate) / control.conversion_rate) * 1000) / 10
-              : 0;
+      <div className="experiments-split">
+        <div className="experiments-list">
+          {experiments.map((exp) => {
+            const control = exp.variants.find((v) => v.key === 'control');
+            const treatment = exp.variants.find((v) => v.key !== 'control');
+            const lift =
+              control && treatment && control.conversion_rate > 0
+                ? Math.round(((treatment.conversion_rate - control.conversion_rate) / control.conversion_rate) * 1000) / 10
+                : 0;
 
-          return (
-            <div key={exp.id} className="experiment-card">
-              <div className="exp-card-header">
-                <div>
-                  <h3 className="exp-title">{exp.name}</h3>
-                  <code className="font-mono text-xs text-muted">{exp.key}</code>
+            return (
+              <div key={exp.id} className="experiment-row">
+                <div className="experiment-row-header">
+                  <span>
+                    <span className="experiment-name">{exp.name}</span>
+                    <span className="experiment-key mono">{exp.key}</span>
+                  </span>
+                  <span className="badge">{exp.status}</span>
                 </div>
-                <span className="badge badge-success">{exp.status.toUpperCase()}</span>
-              </div>
 
-              <p className="exp-description">{exp.description}</p>
-              <div className="exp-target">
-                Target Metric: <strong>{exp.target_metric}</strong>
-              </div>
+                <p className="experiment-description">{exp.description}</p>
 
-              <div className="variants-grid">
-                {exp.variants.map((v) => (
-                  <div key={v.id} className="variant-box">
-                    <div className="variant-header">
-                      <span className="variant-name">{v.name}</span>
-                      <span className="variant-weight font-mono">{v.weight}% Traffic</span>
+                <div className="variant-cols-header">
+                  <span>Variant</span>
+                  <span>Visitors</span>
+                  <span>Conversions</span>
+                  <span>Rate</span>
+                </div>
+                <div className="variant-rows">
+                  {exp.variants.map((v) => (
+                    <div key={v.id} className="variant-row">
+                      <span className="variant-name">
+                        {v.name} <span className="stat-dim">({v.weight}%)</span>
+                      </span>
+                      <span className="variant-num">{v.visitors}</span>
+                      <span className="variant-num">{v.conversions}</span>
+                      <span className="variant-num rate">{v.conversion_rate}%</span>
                     </div>
+                  ))}
+                </div>
 
-                    <div className="variant-stats">
-                      <div className="v-stat">
-                        <span className="v-num">{v.visitors}</span>
-                        <span className="v-label">Visitors</span>
-                      </div>
-                      <div className="v-stat">
-                        <span className="v-num">{v.conversions}</span>
-                        <span className="v-label">Conversions</span>
-                      </div>
-                      <div className="v-stat">
-                        <span className="v-num text-primary font-bold">{v.conversion_rate}%</span>
-                        <span className="v-label">Conv. Rate</span>
-                      </div>
-                    </div>
+                <div className="experiment-result-row">
+                  <div className="experiment-result-metrics">
+                    <span>
+                      Lift <strong>{lift >= 0 ? `+${lift}` : lift}%</strong>
+                    </span>
+                    <span>
+                      Z <strong>{exp.z_score ?? '-'}</strong>
+                    </span>
+                    <span>
+                      Confidence <strong>{exp.confidence_percentage != null ? `${exp.confidence_percentage}%` : '-'}</strong>
+                    </span>
                   </div>
-                ))}
-              </div>
-
-              {/* Statistical Significance Footer */}
-              <div className="significance-banner">
-                <div className="sig-metrics">
-                  <span>Relative Lift: <strong className={lift >= 0 ? 'text-success' : 'text-danger'}>{lift >= 0 ? `+${lift}%` : `${lift}%`}</strong></span>
-                  <span>Z-Score: <strong className="font-mono">{exp.z_score ?? '--'}</strong></span>
-                  <span>Confidence: <strong>{exp.confidence_percentage ? `${exp.confidence_percentage}%` : '--'}</strong></span>
-                </div>
-                <div className="sig-badge-wrap">
                   {exp.is_significant ? (
-                    <span className="badge badge-success">🏆 Statistically Significant (&gt;95%)</span>
+                    <span className="significance-status is-significant">
+                      <span className="status-dot ok" aria-hidden="true" />
+                      Significant at 95%
+                    </span>
                   ) : (
-                    <span className="badge badge-warning">⏳ Gathering Traffic Sample</span>
+                    <span className="significance-status is-pending">
+                      <span className="status-dot warn" aria-hidden="true" />
+                      Gathering traffic
+                    </span>
                   )}
                 </div>
               </div>
-
-              {/* Live Testing Simulator */}
-              <div className="exp-simulator">
-                <div className="sim-title">Live Variant Bucket Tester</div>
-                <div className="sim-inputs">
-                  <input
-                    type="text"
-                    value={testUserId}
-                    onChange={(e) => setTestUserId(e.target.value)}
-                    className="form-input input-xs font-mono"
-                    placeholder="User ID"
-                  />
-                  <button
-                    type="button"
-                    className="btn btn-secondary btn-xs"
-                    onClick={handleGenerateId}
-                  >
-                    🎲 New User
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-primary btn-xs"
-                    onClick={() => handleEvaluate(exp.key)}
-                    disabled={loading}
-                  >
-                    Evaluate Bucket
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-success btn-xs"
-                    onClick={() => handleConvert(exp.key)}
-                    disabled={loading}
-                  >
-                    Trigger Conversion
-                  </button>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {actionFeedback && (
-        <div className="alert-box alert-info">
-          {actionFeedback}
+            );
+          })}
         </div>
-      )}
+
+        <div className="form-column">
+          <h3 className="form-column-title">Test a user</h3>
+          <p className="form-column-description">
+            Check which variant a user id lands in, or record a conversion for it.
+          </p>
+
+          <div className="field">
+            <label className="field-label" htmlFor="test-experiment">
+              Experiment
+            </label>
+            <select
+              id="test-experiment"
+              className="form-input"
+              value={activeKey}
+              onChange={(e) => setSelectedKey(e.target.value)}
+            >
+              {experiments.map((exp) => (
+                <option key={exp.key} value={exp.key}>
+                  {exp.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="field">
+            <label className="field-label" htmlFor="test-user-id">
+              User id
+            </label>
+            <div className="field-row">
+              <input
+                id="test-user-id"
+                type="text"
+                className="form-input mono"
+                value={testUserId}
+                onChange={(e) => setTestUserId(e.target.value)}
+              />
+              <button type="button" className="btn btn-secondary" onClick={handleGenerateId} title="Generate a new user id">
+                <Dices size={16} aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+
+          <div className="form-actions">
+            <button type="button" className="btn btn-primary btn-block" onClick={handleEvaluate} disabled={loading || !activeKey}>
+              Evaluate bucket
+            </button>
+            <button type="button" className="btn btn-secondary btn-block" onClick={handleConvert} disabled={loading || !activeKey}>
+              Record conversion
+            </button>
+          </div>
+
+          {feedback && (
+            <div
+              className={`result-note ${feedback.tone === 'error' ? 'is-error' : feedback.tone === 'success' ? 'is-success' : ''}`}
+              role="status"
+            >
+              {feedback.message}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

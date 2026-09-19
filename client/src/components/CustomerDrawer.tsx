@@ -1,6 +1,36 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { X } from 'lucide-react';
 import type { Customer } from '../../../shared/types';
 import { api } from '../services/index.js';
+import { pluralize } from '../utils/pluralize.js';
+
+interface TimelineEvent {
+  id: string;
+  stage: string;
+  created_at: string;
+}
+
+interface Allocation {
+  id: string;
+  experiment_name: string;
+  experiment_key: string;
+  variant_key: string;
+  converted: boolean;
+}
+
+interface LedgerRow {
+  id: string;
+  created_at: string;
+  event_type: string;
+  amount_cents: number;
+  status: string;
+}
+
+interface CustomerTimeline {
+  events: TimelineEvent[];
+  allocations: Allocation[];
+  ledger: LedgerRow[];
+}
 
 interface CustomerDrawerProps {
   customer: Customer | null;
@@ -8,7 +38,7 @@ interface CustomerDrawerProps {
 }
 
 export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClose }) => {
-  const [timeline, setTimeline] = useState<{ events: any[]; allocations: any[]; ledger: any[] } | null>(null);
+  const [timeline, setTimeline] = useState<CustomerTimeline | null>(null);
   const [loading, setLoading] = useState(false);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -21,7 +51,7 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClos
     setLoading(true);
     api
       .getCustomerTimeline(customer.id)
-      .then(setTimeline)
+      .then((data) => setTimeline(data as CustomerTimeline))
       .catch((err) => console.error('Failed to load customer timeline:', err))
       .finally(() => setLoading(false));
   }, [customer]);
@@ -44,109 +74,120 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClos
       <div className="drawer-content" onClick={(e) => e.stopPropagation()}>
         <div className="drawer-header">
           <div>
-            <span className="drawer-pretitle">Customer Profile & Lifecycle</span>
-            <h2 id="drawer-title" className="drawer-title">{customer.name}</h2>
-            <span className="text-xs text-muted font-mono">{customer.email}</span>
+            <span className="drawer-pretitle">Customer</span>
+            <h2 id="drawer-title" className="drawer-title">
+              {customer.name}
+            </h2>
+            <span className="drawer-email mono">{customer.email}</span>
           </div>
-          <button ref={closeButtonRef} className="btn-icon" onClick={onClose} aria-label="Close profile drawer">✕</button>
+          <button ref={closeButtonRef} className="drawer-close" onClick={onClose} aria-label="Close customer profile">
+            <X size={18} aria-hidden="true" />
+          </button>
         </div>
 
         <div className="drawer-body">
-          <div className="job-meta-grid">
-            <div className="meta-item">
-              <span className="meta-label">Customer ID</span>
-              <span className="meta-value font-mono text-xs">{customer.id.substring(0, 12)}...</span>
+          <div className="drawer-meta-grid">
+            <div className="drawer-meta-item">
+              <span className="drawer-meta-label">Status</span>
+              <span className="badge">{customer.status}</span>
             </div>
-            <div className="meta-item">
-              <span className="meta-label">Lifecycle Status</span>
-              <span className={`badge badge-${customer.status}`}>{customer.status.toUpperCase()}</span>
+            <div className="drawer-meta-item">
+              <span className="drawer-meta-label">MRR</span>
+              <span className="drawer-meta-value">&euro;{(customer.mrr_cents / 100).toFixed(2)}</span>
             </div>
-            <div className="meta-item">
-              <span className="meta-label">Monthly MRR</span>
-              <span className="meta-value text-success font-bold">€{(customer.mrr_cents / 100).toFixed(2)}</span>
+            <div className="drawer-meta-item">
+              <span className="drawer-meta-label">First seen</span>
+              <span className="drawer-meta-value">{new Date(customer.created_at).toLocaleDateString()}</span>
             </div>
-            <div className="meta-item">
-              <span className="meta-label">First Seen</span>
-              <span className="meta-value text-xs">{new Date(customer.created_at).toLocaleDateString()}</span>
+            <div className="drawer-meta-item">
+              <span className="drawer-meta-label">Customer id</span>
+              <span className="drawer-meta-value">{customer.id.substring(0, 12)}</span>
             </div>
           </div>
 
           {loading ? (
-            <div className="loading-state">Loading customer timeline...</div>
+            <div className="loading-state">Loading customer timeline.</div>
           ) : (
             <>
-              <div className="section-title">Assigned A/B Experiments ({timeline?.allocations.length || 0})</div>
-              {timeline && timeline.allocations.length > 0 ? (
-                <div className="allocations-list">
-                  {timeline.allocations.map((a: any) => (
-                    <div key={a.id} className="allocation-item">
-                      <div className="alloc-info">
-                        <strong>{a.experiment_name}</strong>
-                        <code className="text-xs text-muted font-mono">({a.experiment_key})</code>
+              <section>
+                <h3 className="drawer-section-title">
+                  Experiment allocations ({timeline?.allocations.length ?? 0})
+                </h3>
+                {timeline && timeline.allocations.length > 0 ? (
+                  <div className="allocation-list">
+                    {timeline.allocations.map((a) => (
+                      <div key={a.id} className="allocation-row">
+                        <span className="allocation-name">
+                          {a.experiment_name}
+                          <span className="allocation-key mono">{a.experiment_key}</span>
+                        </span>
+                        <span className="allocation-tags">
+                          <span className="badge mono">{a.variant_key}</span>
+                          <span className="significance-status" style={{ color: a.converted ? 'var(--ok)' : 'var(--ink-3)' }}>
+                            <span className={`status-dot ${a.converted ? 'ok' : 'warn'}`} aria-hidden="true" />
+                            {a.converted ? 'Converted' : 'Not converted'}
+                          </span>
+                        </span>
                       </div>
-                      <div className="alloc-badges">
-                        <span className="badge badge-primary font-mono">{a.variant_key.toUpperCase()}</span>
-                        {a.converted ? (
-                          <span className="badge badge-success">Converted</span>
-                        ) : (
-                          <span className="badge badge-warning">Not Converted</span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="empty-subtext">No experiment buckets assigned to this user.</div>
-              )}
+                    ))}
+                  </div>
+                ) : (
+                  <p className="empty-note">No experiment allocations for this customer.</p>
+                )}
+              </section>
 
-              <div className="section-title">Funnel Lifecycle Progression</div>
-              {timeline && timeline.events.length > 0 ? (
-                <div className="events-timeline">
-                  {timeline.events.map((ev: any) => (
-                    <div key={ev.id} className="timeline-item">
-                      <span className="timeline-marker">●</span>
-                      <div className="timeline-content">
-                        <div className="timeline-stage">{ev.stage.toUpperCase()}</div>
-                        <div className="timeline-date text-xs text-muted">
-                          {new Date(ev.created_at).toLocaleString()}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="empty-subtext">No funnel events recorded.</div>
-              )}
+              <section>
+                <h3 className="drawer-section-title">Funnel events ({timeline?.events.length ?? 0})</h3>
+                {timeline && timeline.events.length > 0 ? (
+                  <ul className="event-timeline">
+                    {timeline.events.map((ev) => (
+                      <li key={ev.id} className="event-timeline-item">
+                        <span className="event-stage">{ev.stage}</span>
+                        <br />
+                        <span className="event-time">{new Date(ev.created_at).toLocaleString()}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="empty-note">No funnel events recorded.</p>
+                )}
+              </section>
 
-              <div className="section-title">Reconciled Payment Transactions ({timeline?.ledger.length || 0})</div>
-              {timeline && timeline.ledger.length > 0 ? (
-                <div className="attempts-table-wrapper">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>Date</th>
-                        <th>Event</th>
-                        <th>Amount</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {timeline.ledger.map((l: any) => (
-                        <tr key={l.id}>
-                          <td className="text-xs">{new Date(l.created_at).toLocaleDateString()}</td>
-                          <td className="font-mono text-xs">{l.event_type}</td>
-                          <td className="font-bold">€{(l.amount_cents / 100).toFixed(2)}</td>
-                          <td>
-                            <span className={`badge badge-${l.status}`}>{l.status}</span>
-                          </td>
+              <section>
+                <h3 className="drawer-section-title">
+                  {(timeline?.ledger.length ?? 0)} {pluralize(timeline?.ledger.length ?? 0, 'ledger entry', 'ledger entries')}
+                </h3>
+                {timeline && timeline.ledger.length > 0 ? (
+                  <div className="table-wrapper">
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>Date</th>
+                          <th>Event</th>
+                          <th>Amount</th>
+                          <th>Status</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="empty-subtext">No billing transactions recorded for this customer.</div>
-              )}
+                      </thead>
+                      <tbody>
+                        {timeline.ledger.map((l) => (
+                          <tr key={l.id}>
+                            <td style={{ fontSize: 13 }}>{new Date(l.created_at).toLocaleDateString()}</td>
+                            <td className="mono" style={{ fontSize: 13 }}>
+                              {l.event_type}
+                            </td>
+                            <td className="amount-cell">&euro;{(l.amount_cents / 100).toFixed(2)}</td>
+                            <td>
+                              <span className="badge">{l.status}</span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="empty-note">No payment transactions for this customer.</p>
+                )}
+              </section>
             </>
           )}
         </div>
