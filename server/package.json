@@ -5,6 +5,14 @@
   "private": true,
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Taan1el/craftfunnel.git"
+  },
+  "homepage": "https://taan1el.github.io/craftfunnel/",
+  "bugs": {
+    "url": "https://github.com/Taan1el/craftfunnel/issues"
+  },
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
