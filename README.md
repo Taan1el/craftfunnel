@@ -14,7 +14,10 @@ The demo runs entirely in your browser: the same funnel and experiment math the 
 
 ![Funnel and A/B experiment dashboard](docs/screenshots/01-dashboard.png)
 
-More screenshots: [Stripe webhook simulator and ledger](docs/screenshots/02-billing.png), [customer directory](docs/screenshots/03-customers.png).
+The dashboard is a flat, light-paper interface: a stats strip up top, the acquisition funnel as a plain bar list with the
+real count and conversion rate in mono type beside each stage, and A/B experiments as a dense list with a narrow "test a
+user" column beside them. More screenshots: [Stripe webhook simulator and ledger](docs/screenshots/02-billing.png),
+[customer directory](docs/screenshots/03-customers.png).
 
 ## Features
 
@@ -111,7 +114,7 @@ graph TD
 ```
 craftfunnel/
   client/                 React 19 + Vite dashboard
-    src/components/       MetricsOverview, FunnelVisualizer, ExperimentCards, WebhookSimulator, LedgerTable, CustomerDrawer, DemoBanner
+    src/components/       Header, StatsBar, FunnelVisualizer, ExperimentCards, WebhookSimulator, LedgerTable, CustomerDrawer, DemoBanner
     src/services/         api.ts (real), demoApi.ts (browser demo), demoData.ts (seed data), index.ts (the switch)
   server/                 Express API
     src/app.ts            Express app: CORS, JSON body parsing, API mount, static client build

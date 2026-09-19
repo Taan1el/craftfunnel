@@ -8,10 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 - Express API modeling an acquisition funnel, deterministic hash-based A/B experiment allocation, and Stripe-style webhook reconciliation with a payment ledger, backed by Node's native SQLite (`node:sqlite`, WAL mode).
-- React 19 dashboard: a funnel drop-off visualizer, experiment cards with a live variant-bucket tester, a webhook simulator, a payment ledger table, and a customer lifecycle drawer.
+- React 19 dashboard: a flat funnel visualizer, a dense A/B experiment list with a live variant-bucket tester, a webhook simulator, a payment ledger table, and a customer lifecycle drawer, in a light-paper, single-accent visual style with self-hosted Sora/Geist/Geist Mono fonts and `lucide-react` icons.
 - In-browser demo mode for GitHub Pages: the same funnel and experiment math (`shared/`) runs against fixed seed data with no backend, with a banner explaining that and a "Reset demo data" control.
 - Docker image (multi-stage build) and a Compose file; the API container also serves the built dashboard.
-- CI workflow (Node 22.x/24.x matrix: lint, test, build; plus a Docker build) and a GitHub Pages deployment workflow.
+- CI workflow (Node 22.x/24.x matrix: lint, test, build, and the GitHub Pages build; plus a Docker build) and a GitHub Pages deployment workflow.
 - Server tests for every route and its edge cases, pure-logic unit tests for the shared funnel and significance math, and client tests including a dedicated demo-adapter suite.
 
 ### Fixed
@@ -23,3 +23,5 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - The API container never served the built client, despite the README and Compose file describing one unified container.
 - Error responses sent the raw error message to the client, which could leak internal detail; unexpected errors now log server-side and return a generic message.
 - Funnel stage, experiment, and webhook request bodies were not validated against known values.
+- `.gitignore`'s database patterns were anchored to the repo root, so they never actually matched the server's real `server/data/craftfunnel.db` path.
+- `server/package.json` and `client/package.json` were missing the `repository`, `homepage`, and `bugs` fields already present at the root.
