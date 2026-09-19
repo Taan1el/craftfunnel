@@ -35,6 +35,9 @@ jobs:
       - name: Verify production build
         run: npm run build
 
+      - name: Verify GitHub Pages build
+        run: npm run build:pages
+
   docker:
     runs-on: ubuntu-latest
     steps:
