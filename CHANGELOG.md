@@ -4,6 +4,14 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Changed
+- New visual identity: pure white pages with a single raspberry accent, Red Hat Display, Red Hat Text and Azeret Mono type, and 12px rounded bars and controls.
+- The acquisition funnel is now the hero of the page, drawn as full-width stage bars with a drop-off chip between stages. The key metrics are one line of large numerals above it instead of a strip.
+- Experiments, Billing and Customers moved into underline tabs below the funnel. The webhook form is a single row above the payment ledger, and experiment variants show a small conversion-rate bar.
+- Every control is at least 44px tall at phone width, including the demo bar links and the refresh checkbox.
+
 ## [1.0.0] - 2026-09-15
 
 ### Added

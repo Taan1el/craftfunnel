@@ -48,7 +48,7 @@ code {
 }
 
 .muted {
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
 .sr-only {
@@ -87,7 +87,6 @@ code {
 .demo-bar-inner,
 .header-inner,
 .app-main,
-.app-footer,
 .alert {
   width: 100%;
   max-width: calc(1200px + 2 * var(--page-pad));
@@ -366,7 +365,7 @@ select.form-input {
 .numerals {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 1rem 3.5rem;
 }
 
@@ -397,7 +396,7 @@ select.form-input {
 
 .numeral-note {
   font-size: 13px;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
 /* ---- Funnel hero ---- */
@@ -430,7 +429,7 @@ select.form-input {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  height: 40px;
+  height: 34px;
 }
 
 .stage-gap::after {
@@ -483,7 +482,7 @@ select.form-input {
 }
 
 .stage-track {
-  height: 52px;
+  height: 44px;
   border-radius: var(--radius);
   background-color: var(--rule);
   overflow: hidden;
@@ -611,7 +610,7 @@ select.form-input {
 
 .experiment-key {
   font-size: 12px;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
 .experiment-description {
@@ -669,7 +668,7 @@ select.form-input {
 }
 
 .stat-dim {
-  color: var(--ink-3);
+  color: var(--ink-2);
   font-size: 12px;
 }
 
@@ -733,8 +732,7 @@ select.form-input {
 /* ---- Billing: webhook strip above the ledger ---- */
 
 .webhook-strip {
-  padding: 1.5rem 0;
-  border-top: 1px solid var(--ink);
+  padding: 0 0 1.5rem;
   border-bottom: 1px solid var(--rule-strong);
 }
 
@@ -838,7 +836,7 @@ select.form-input {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: var(--ink-3);
+  background-color: var(--ink-2);
 }
 
 .status-dot.ok {
@@ -885,7 +883,7 @@ select.form-input {
   position: absolute;
   left: 0.85rem;
   top: 14px;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
 .search-field input {
@@ -1009,7 +1007,7 @@ select.form-input {
 .allocation-key {
   margin-left: 0.6rem;
   font-size: 12px;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
 .allocation-tags {
@@ -1048,12 +1046,15 @@ select.form-input {
 .event-time {
   font-family: var(--font-mono);
   font-size: 12px;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
 /* ---- Footer ---- */
 
 .app-footer {
+  width: min(100% - 2 * var(--page-pad), 1200px);
+  padding-inline: 0;
+  margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1133,4 +1134,15 @@ select.form-input {
   * {
     transition: none !important;
   }
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+::placeholder {
+  color: var(--ink-3);
 }

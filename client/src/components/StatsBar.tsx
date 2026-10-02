@@ -16,6 +16,7 @@ export const StatsBar: React.FC<StatsBarProps> = ({ metrics }) => {
       <div className="numeral">
         <dt>MRR</dt>
         <dd className="numeral-value">&euro;{metrics.mrr_eur.toLocaleString()}</dd>
+        <dd className="numeral-note">recurring, per month</dd>
       </div>
 
       <div className="numeral">

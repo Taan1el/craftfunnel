@@ -117,6 +117,16 @@ describe('CraftFunnel Frontend Dashboard', () => {
     });
   });
 
+  it('shows a drop-off chip between funnel stages and the experiments tab count', async () => {
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByText('-20% drop-off')).toBeInTheDocument();
+      expect(screen.getAllByText('no drop-off').length).toBe(2);
+      expect(screen.getByRole('tab', { name: 'Experiments (1)' })).toHaveAttribute('aria-selected', 'true');
+    });
+  });
+
   it('renders an A/B experiment row with statistical significance', async () => {
     render(<App />);
 

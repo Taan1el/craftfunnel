@@ -14,10 +14,11 @@ The demo runs entirely in your browser: the same funnel and experiment math the 
 
 ![Funnel and A/B experiment dashboard](docs/screenshots/01-dashboard.png)
 
-The dashboard is a flat, light-paper interface: a stats strip up top, the acquisition funnel as a plain bar list with the
-real count and conversion rate in mono type beside each stage, and A/B experiments as a dense list with a narrow "test a
-user" column beside them. More screenshots: [Stripe webhook simulator and ledger](docs/screenshots/02-billing.png),
-[customer directory](docs/screenshots/03-customers.png).
+The dashboard is a growth chart room on pure white: one line of large numerals (MRR, active subscribers, conversion, ARPU)
+sits above the acquisition funnel, which fills the first screen as full-width stage bars with the real count, conversion
+rate and a drop-off chip between stages. Experiments, Billing and Customers are underline tabs below the funnel. More
+screenshots: [Stripe webhook simulator and ledger](docs/screenshots/02-billing.png),
+[customer directory](docs/screenshots/03-customers.png), [phone width](docs/screenshots/04-dashboard-mobile.png).
 
 ## Features
 
