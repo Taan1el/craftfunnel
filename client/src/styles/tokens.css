@@ -1,20 +1,28 @@
 :root {
-  --paper: #faf9f6;        /* page background */
-  --surface: #ffffff;      /* panels, tables */
-  --ink: #17160f;          /* primary text */
-  --ink-2: #57544b;        /* secondary text */
-  --ink-3: #8a867b;        /* tertiary text, placeholders */
-  --rule: #e3e0d7;         /* borders and dividers */
-  --rule-strong: #cfcabd;  /* input borders, table header rule */
+  --paper: #ffffff;        /* page background */
+  --surface: #ffffff;      /* panels are separated by rules, not fills */
+  --ink: #1a1216;          /* primary text */
+  --ink-2: #594d53;        /* secondary text */
+  --ink-3: #72666c;        /* tertiary text, placeholders */
+  --rule: #ece5e8;         /* hairlines and bar tracks */
+  --rule-strong: #cdc3c8;  /* emphasized dividers */
+  --control: #8a7e84;      /* borders of inputs, buttons and checkboxes (3:1) */
   --accent: #b8325a;       /* craftfunnel: growth funnel */
   --accent-ink: #ffffff;   /* text on accent fills */
-  --accent-soft: color-mix(in srgb, var(--accent) 10%, var(--surface));
-  /* status colors are data, not decoration: use only for status text, dots, small badges and meter fills */
+  --accent-soft: #fbeef2;  /* selection tint */
+  /* status colors encode status only: text, dots and thin rules */
   --ok: #1f7a4d;
-  --warn: #a15c00;
+  --warn: #8a5000;
   --bad: #b3261e;
-  --radius: 6px;
-  --font-heading: "Sora Variable", "Sora", ui-sans-serif, system-ui, sans-serif;
-  --font-body: "Geist Variable", "Geist", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, "SFMono-Regular", monospace;
+  --radius: 12px;
+  --page-pad: 2rem;
+  --font-heading: "Red Hat Display Variable", "Red Hat Display", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Red Hat Text Variable", "Red Hat Text", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Azeret Mono Variable", "Azeret Mono", ui-monospace, "SFMono-Regular", monospace;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --page-pad: 1rem;
+  }
 }

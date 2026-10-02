@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { BarChart3, CreditCard, Users, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import type {
   Customer,
   Experiment,
@@ -26,7 +26,7 @@ export const App: React.FC = () => {
   const [ledgerEntries, setLedgerEntries] = useState<PaymentLedgerEntry[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
 
-  const [activeTab, setActiveTab] = useState<'growth' | 'billing' | 'customers'>('growth');
+  const [activeTab, setActiveTab] = useState<'experiments' | 'billing' | 'customers'>('experiments');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [customerSearch, setCustomerSearch] = useState('');
   const [loading, setLoading] = useState(false);
@@ -93,7 +93,7 @@ export const App: React.FC = () => {
       />
 
       {loadError && (
-        <div className="alert alert-error" role="alert" style={{ maxWidth: 1200, margin: '1rem auto 0', width: '100%' }}>
+        <div className="alert alert-error" role="alert">
           <span className="alert-message">{loadError}</span>
           <button type="button" className="link-btn" onClick={loadData}>
             Retry
@@ -109,18 +109,19 @@ export const App: React.FC = () => {
         <main className="app-main">
           <StatsBar metrics={metrics} />
 
-          <div>
+          <FunnelVisualizer steps={funnelSteps} />
+
+          <div className="tabs-area">
             <div className="tabs-nav" role="tablist" aria-label="Dashboard sections">
               <button
-                id="tab-growth"
-                className={`tab-btn ${activeTab === 'growth' ? 'active' : ''}`}
-                onClick={() => setActiveTab('growth')}
+                id="tab-experiments"
+                className={`tab-btn ${activeTab === 'experiments' ? 'active' : ''}`}
+                onClick={() => setActiveTab('experiments')}
                 role="tab"
-                aria-selected={activeTab === 'growth'}
-                aria-controls="panel-growth"
+                aria-selected={activeTab === 'experiments'}
+                aria-controls="panel-experiments"
               >
-                <BarChart3 size={16} aria-hidden="true" />
-                Funnel &amp; experiments
+                Experiments ({experiments.length})
               </button>
               <button
                 id="tab-billing"
@@ -130,7 +131,6 @@ export const App: React.FC = () => {
                 aria-selected={activeTab === 'billing'}
                 aria-controls="panel-billing"
               >
-                <CreditCard size={16} aria-hidden="true" />
                 Billing ({ledgerEntries.length})
               </button>
               <button
@@ -141,40 +141,29 @@ export const App: React.FC = () => {
                 aria-selected={activeTab === 'customers'}
                 aria-controls="panel-customers"
               >
-                <Users size={16} aria-hidden="true" />
                 {customers.length} {pluralize(customers.length, 'customer')}
               </button>
             </div>
 
-            {activeTab === 'growth' && (
-              <div id="panel-growth" role="tabpanel" aria-labelledby="tab-growth" className="tab-panel">
-                <FunnelVisualizer steps={funnelSteps} />
+            {activeTab === 'experiments' && (
+              <div id="panel-experiments" role="tabpanel" aria-labelledby="tab-experiments" className="tab-panel">
                 <ExperimentCards experiments={experiments} onRefresh={loadData} />
               </div>
             )}
 
             {activeTab === 'billing' && (
               <div id="panel-billing" role="tabpanel" aria-labelledby="tab-billing" className="tab-panel">
-                <div className="billing-split">
-                  <WebhookSimulator customers={customers} onReconciliationComplete={loadData} />
-                  <LedgerTable entries={ledgerEntries} />
-                </div>
+                <WebhookSimulator customers={customers} onReconciliationComplete={loadData} />
+                <LedgerTable entries={ledgerEntries} />
               </div>
             )}
 
             {activeTab === 'customers' && (
               <div id="panel-customers" role="tabpanel" aria-labelledby="tab-customers" className="tab-panel">
-                <div className="section-header">
-                  <h2 className="section-heading">Customers</h2>
-                  <p className="section-description">
-                    {customers.length} {pluralize(customers.length, 'customer')} in the lifecycle. Select a row to inspect a
-                    profile.
-                  </p>
-                </div>
-
                 <div className="list-toolbar">
+                  <p className="section-description">Select a row to inspect a customer profile.</p>
                   <div className="search-field">
-                    <Search size={16} aria-hidden="true" />
+                    <Search size={16} strokeWidth={1.75} aria-hidden="true" />
                     <label htmlFor="customer-search" className="sr-only">
                       Search customers by name or email
                     </label>
@@ -227,16 +216,14 @@ export const App: React.FC = () => {
                             }}
                           >
                             <td>{cust.name}</td>
-                            <td className="mono" style={{ fontSize: 13 }}>
-                              {cust.email}
-                            </td>
+                            <td className="mono small">{cust.email}</td>
                             <td>
                               <span className="badge">{cust.status}</span>
                             </td>
                             <td className={`amount-cell ${cust.mrr_cents > 0 ? 'is-positive' : ''}`}>
                               &euro;{(cust.mrr_cents / 100).toFixed(2)}
                             </td>
-                            <td style={{ fontSize: 13, color: 'var(--ink-2)' }}>
+                            <td className="small muted">
                               {new Date(cust.created_at).toLocaleDateString()}
                             </td>
                           </tr>

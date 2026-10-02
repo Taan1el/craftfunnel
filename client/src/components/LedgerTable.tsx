@@ -46,14 +46,14 @@ export const LedgerTable: React.FC<LedgerTableProps> = ({ entries }) => {
 
                 return (
                   <tr key={entry.id}>
-                    <td className="mono" style={{ fontSize: 13 }}>
+                    <td className="mono small">
                       {new Date(entry.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                     </td>
                     <td>{entry.customer_email || entry.customer_id}</td>
-                    <td className="mono" style={{ fontSize: 13 }}>
+                    <td className="mono small">
                       {entry.stripe_event_id}
                     </td>
-                    <td className="mono" style={{ fontSize: 13 }}>
+                    <td className="mono small">
                       {entry.event_type}
                     </td>
                     <td className={`amount-cell ${isNegative ? 'is-negative' : 'is-positive'}`}>
@@ -65,7 +65,7 @@ export const LedgerTable: React.FC<LedgerTableProps> = ({ entries }) => {
                         {entry.status}
                       </span>
                     </td>
-                    <td className="mono" style={{ fontSize: 13, color: 'var(--ink-3)' }}>
+                    <td className="mono small muted">
                       {entry.invoice_id || '-'}
                     </td>
                   </tr>

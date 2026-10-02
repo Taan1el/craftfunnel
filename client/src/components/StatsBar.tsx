@@ -8,37 +8,35 @@ interface StatsBarProps {
 
 export const StatsBar: React.FC<StatsBarProps> = ({ metrics }) => {
   if (!metrics) {
-    return <div className="stats-strip-loading">Loading metrics.</div>;
+    return <div className="numerals-loading">Loading metrics.</div>;
   }
 
   return (
-    <div className="stats-strip">
-      <div className="stat-cell">
-        <span className="stat-label">MRR</span>
-        <span className="stat-value">
-          &euro;{metrics.mrr_eur.toLocaleString()}
-        </span>
+    <dl className="numerals">
+      <div className="numeral">
+        <dt>MRR</dt>
+        <dd className="numeral-value">&euro;{metrics.mrr_eur.toLocaleString()}</dd>
       </div>
 
-      <div className="stat-cell">
-        <span className="stat-label">Active subscribers</span>
-        <span className="stat-value">{metrics.active_subscribers}</span>
-        <span className="stat-note">
+      <div className="numeral">
+        <dt>Active subscribers</dt>
+        <dd className="numeral-value">{metrics.active_subscribers}</dd>
+        <dd className="numeral-note">
           of {metrics.total_customers} {pluralize(metrics.total_customers, 'customer')}
-        </span>
+        </dd>
       </div>
 
-      <div className="stat-cell">
-        <span className="stat-label">Funnel conversion</span>
-        <span className="stat-value">{metrics.funnel_conversion_rate}%</span>
-        <span className="stat-note">visitor to paid</span>
+      <div className="numeral">
+        <dt>Funnel conversion</dt>
+        <dd className="numeral-value">{metrics.funnel_conversion_rate}%</dd>
+        <dd className="numeral-note">visitor to paid</dd>
       </div>
 
-      <div className="stat-cell">
-        <span className="stat-label">ARPU</span>
-        <span className="stat-value">&euro;{metrics.arpu_eur}</span>
-        <span className="stat-note">per active subscriber</span>
+      <div className="numeral">
+        <dt>ARPU</dt>
+        <dd className="numeral-value">&euro;{metrics.arpu_eur}</dd>
+        <dd className="numeral-note">per active subscriber</dd>
       </div>
-    </div>
+    </dl>
   );
 };

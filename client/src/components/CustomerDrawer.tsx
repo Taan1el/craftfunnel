@@ -81,7 +81,7 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClos
             <span className="drawer-email mono">{customer.email}</span>
           </div>
           <button ref={closeButtonRef} className="drawer-close" onClick={onClose} aria-label="Close customer profile">
-            <X size={18} aria-hidden="true" />
+            <X size={18} strokeWidth={1.75} aria-hidden="true" />
           </button>
         </div>
 
@@ -123,7 +123,7 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClos
                         </span>
                         <span className="allocation-tags">
                           <span className="badge mono">{a.variant_key}</span>
-                          <span className="significance-status" style={{ color: a.converted ? 'var(--ok)' : 'var(--ink-3)' }}>
+                          <span className={`significance-status ${a.converted ? 'is-significant' : 'is-pending'}`}>
                             <span className={`status-dot ${a.converted ? 'ok' : 'warn'}`} aria-hidden="true" />
                             {a.converted ? 'Converted' : 'Not converted'}
                           </span>
@@ -171,8 +171,8 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClos
                       <tbody>
                         {timeline.ledger.map((l) => (
                           <tr key={l.id}>
-                            <td style={{ fontSize: 13 }}>{new Date(l.created_at).toLocaleDateString()}</td>
-                            <td className="mono" style={{ fontSize: 13 }}>
+                            <td className="small">{new Date(l.created_at).toLocaleDateString()}</td>
+                            <td className="mono small">
                               {l.event_type}
                             </td>
                             <td className="amount-cell">&euro;{(l.amount_cents / 100).toFixed(2)}</td>

@@ -81,7 +81,7 @@ export const WebhookSimulator: React.FC<WebhookSimulatorProps> = ({ customers, o
   };
 
   return (
-    <div className="form-column">
+    <div className="webhook-strip">
       <h3 className="form-column-title">Fire a Stripe webhook</h3>
       <p className="form-column-description">
         Sends a Stripe-shaped event to the reconciliation endpoint and records it in the ledger.
@@ -90,7 +90,7 @@ export const WebhookSimulator: React.FC<WebhookSimulatorProps> = ({ customers, o
       {customers.length === 0 ? (
         <p className="empty-note">No customers yet, so there is nothing to bill.</p>
       ) : (
-        <form onSubmit={handleSendWebhook}>
+        <form onSubmit={handleSendWebhook} className="webhook-form">
           <div className="field">
             <label className="field-label" htmlFor="sim-event-type">
               Event type
@@ -133,11 +133,9 @@ export const WebhookSimulator: React.FC<WebhookSimulatorProps> = ({ customers, o
           </div>
 
           <div className="field">
-            <div className="field-row" style={{ justifyContent: 'space-between', alignItems: 'baseline' }}>
-              <label className="field-label" htmlFor="sim-idempotency">
-                Stripe event id
-              </label>
-            </div>
+            <label className="field-label" htmlFor="sim-idempotency">
+              Stripe event id
+            </label>
             <div className="field-row">
               <input
                 id="sim-idempotency"
@@ -147,13 +145,13 @@ export const WebhookSimulator: React.FC<WebhookSimulatorProps> = ({ customers, o
                 className="form-input mono"
               />
               <button type="button" className="btn btn-secondary" onClick={handleGenerateKey} title="Generate a new event id">
-                <Dices size={16} aria-hidden="true" />
+                <Dices size={16} strokeWidth={1.75} aria-hidden="true" />
               </button>
             </div>
           </div>
 
           <div className="form-actions">
-            <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
+            <button type="submit" className="btn btn-primary" disabled={loading}>
               {loading ? 'Reconciling' : 'Fire Stripe webhook'}
             </button>
           </div>

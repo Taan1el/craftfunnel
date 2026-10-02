@@ -73,6 +73,7 @@ export const ExperimentCards: React.FC<ExperimentCardsProps> = ({ experiments, o
           {experiments.map((exp) => {
             const control = exp.variants.find((v) => v.key === 'control');
             const treatment = exp.variants.find((v) => v.key !== 'control');
+            const maxRate = Math.max(1, ...exp.variants.map((x) => x.conversion_rate));
             const lift =
               control && treatment && control.conversion_rate > 0
                 ? Math.round(((treatment.conversion_rate - control.conversion_rate) / control.conversion_rate) * 1000) / 10
@@ -104,7 +105,12 @@ export const ExperimentCards: React.FC<ExperimentCardsProps> = ({ experiments, o
                       </span>
                       <span className="variant-num">{v.visitors}</span>
                       <span className="variant-num">{v.conversions}</span>
-                      <span className="variant-num rate">{v.conversion_rate}%</span>
+                      <span className="variant-rate">
+                        <span className="variant-num rate">{v.conversion_rate}%</span>
+                        <span className="rate-track" aria-hidden="true">
+                          <span className="rate-fill" style={{ width: `${Math.round((v.conversion_rate / maxRate) * 100)}%` }} />
+                        </span>
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -175,7 +181,7 @@ export const ExperimentCards: React.FC<ExperimentCardsProps> = ({ experiments, o
                 onChange={(e) => setTestUserId(e.target.value)}
               />
               <button type="button" className="btn btn-secondary" onClick={handleGenerateId} title="Generate a new user id">
-                <Dices size={16} aria-hidden="true" />
+                <Dices size={16} strokeWidth={1.75} aria-hidden="true" />
               </button>
             </div>
           </div>
