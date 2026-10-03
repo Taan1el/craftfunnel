@@ -160,6 +160,7 @@ Shapes (`GrowthMetrics`, `Experiment`, `Variant`, `FunnelStepMetric`, `Customer`
 - **Error handling** (`server/test/error.middleware.test.ts`): a deliberate 4xx `HttpError`'s own message reaches the client; anything else (including a 5xx `HttpError`) returns a generic message instead.
 - **Client** (`client/src/test`, React Testing Library): dashboard rendering and tab switching, and the webhook simulator's empty state and client-side amount validation.
 - **Demo adapter** (`client/src/test/demoApi.test.ts`): the seeded catalog, funnel and growth metrics, deterministic allocation and conversion, webhook reconciliation and idempotency, validation, and reset.
+- **Accessibility** (`client/src/test/Accessibility.test.tsx`, `vitest-axe`): automated WCAG 2 A and AA checks on the funnel view, the Experiments, Billing and Customers tabs, and the customer drawer. jsdom cannot compute colors, so color contrast is checked outside the test suite.
 
 Run everything with `npm test` (or `npm run test:server` / `npm run test:client` separately).
 

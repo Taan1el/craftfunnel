@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Automated accessibility checks (WCAG 2 A and AA, using axe) for the funnel view, the Experiments, Billing and Customers tabs, and the customer drawer. Color contrast is verified separately because jsdom cannot compute colors.
+
 ### Changed
 - New visual identity: pure white pages with a single raspberry accent, Red Hat Display, Red Hat Text and Azeret Mono type, and 12px rounded bars and controls.
 - The acquisition funnel is now the hero of the page, drawn as full-width stage bars with a drop-off chip between stages. The key metrics are one line of large numerals above it instead of a strip.
