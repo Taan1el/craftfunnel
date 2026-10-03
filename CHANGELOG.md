@@ -6,7 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- The payment ledger, customers and customer drawer tables can now be scrolled sideways with the keyboard on narrow screens, with a visible focus outline.
+
 ### Added
+- A test that checks every scrollable table wrapper is a labelled, focusable region.
 - Automated accessibility checks (WCAG 2 A and AA, using axe) for the funnel view, the Experiments, Billing and Customers tabs, and the customer drawer. Color contrast is verified separately because jsdom cannot compute colors.
 
 ### Changed

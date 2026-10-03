@@ -177,7 +177,7 @@ export const App: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="table-wrapper">
+                <div className="table-wrapper" role="region" tabIndex={0} aria-label="Customers table">
                   <table className="data-table">
                     <thead>
                       <tr>

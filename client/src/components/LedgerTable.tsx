@@ -19,7 +19,7 @@ export const LedgerTable: React.FC<LedgerTableProps> = ({ entries }) => {
         <p className="section-description">Reconciled webhook events, newest first.</p>
       </div>
 
-      <div className="table-wrapper">
+      <div className="table-wrapper" role="region" tabIndex={0} aria-label="Payment ledger table">
         <table className="data-table">
           <thead>
             <tr>

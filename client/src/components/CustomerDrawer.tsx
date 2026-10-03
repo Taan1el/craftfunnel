@@ -158,7 +158,7 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClos
                   {(timeline?.ledger.length ?? 0)} {pluralize(timeline?.ledger.length ?? 0, 'ledger entry', 'ledger entries')}
                 </h3>
                 {timeline && timeline.ledger.length > 0 ? (
-                  <div className="table-wrapper">
+                  <div className="table-wrapper" role="region" tabIndex={0} aria-label="Customer ledger table">
                     <table className="data-table">
                       <thead>
                         <tr>
