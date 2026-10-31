@@ -1,0 +1,44 @@
+.local-source,.local-analysis{max-width:1264px;margin:auto;padding:1rem var(--page-pad)}
+.local-source{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;border-bottom:1px solid var(--rule)}
+.local-source label,.local-analysis label{display:block;font-size:14px;font-weight:600;margin-top:.5rem}
+.local-source select,.local-source button,.local-analysis button,.local-analysis select,.local-analysis input,.local-analysis textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--control);border-radius:12px;min-height:44px;padding:.55rem .8rem;max-width:100%}
+.local-analysis button,.local-source button{cursor:pointer;font-weight:600}
+.local-analysis button:disabled{cursor:wait;color:var(--ink-2);background:var(--rule)}
+.local-analysis input,.local-analysis textarea{width:100%}
+.local-analysis textarea{resize:vertical}
+.local-analysis h1{color:var(--accent);font-size:28px}
+.local-analysis h2{font-size:24px;margin-bottom:.75rem}
+.local-analysis h3{font-size:19px;margin-top:1.5rem}
+.local-analysis p{color:var(--ink-2);margin:.6rem 0;max-width:95ch}
+.local-heading,.local-actions,.local-row{display:flex;justify-content:space-between;align-items:center;gap:.75rem;flex-wrap:wrap}
+.local-actions{justify-content:flex-start}
+.local-status{min-height:44px}
+.local-analysis .link-btn{color:var(--accent);border:0;background:none;padding-inline:.4rem}
+.local-metrics{display:grid;grid-template-columns:repeat(4,1fr);border-block:1px solid var(--rule);padding:1.5rem 0;margin:1rem 0 2rem;gap:1rem}
+.local-metrics strong{display:block;font-family:var(--font-heading);font-size:clamp(24px,3vw,38px);line-height:1.2}
+.local-metrics span{font-size:14px;color:var(--ink-2)}
+.local-funnel ol{list-style:none;padding:1rem 0}
+.local-funnel li{margin:.8rem 0 1.25rem}
+.local-funnel li>div:first-child{display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap;margin-bottom:.4rem;overflow-wrap:anywhere}
+.local-funnel li span{font-size:14px;color:var(--ink-2)}
+.local-track{height:28px;border-radius:12px;background:var(--accent-soft);overflow:hidden}
+.local-track>div{height:100%;border-radius:12px;background:var(--accent)}
+.local-funnel details{border-block:1px solid var(--rule);padding:.5rem 0;margin:1rem 0}
+.local-funnel summary{cursor:pointer;min-height:44px;padding:.5rem 0;font-weight:600}
+.local-funnel details textarea{max-width:550px;display:block;margin-bottom:.5rem}
+.local-table{position:relative;overflow:auto;margin:1rem 0;max-height:480px;border-block:1px solid var(--rule)}
+.local-table table{width:100%;border-collapse:collapse;font-size:14px;text-align:left}
+.local-table th,.local-table td{padding:.8rem;border-bottom:1px solid var(--rule);white-space:nowrap;font-variant-numeric:tabular-nums}
+.local-table th{font-weight:600}
+.local-table th[scope=row]{text-transform:none}
+.local-tabs{display:flex;gap:1.5rem;border-block:1px solid var(--rule);margin:2rem 0;padding:.4rem 0}
+.local-tabs button{border:0;border-radius:0;color:var(--ink-2);border-bottom:3px solid transparent}
+.local-tabs button[aria-current]{color:var(--accent);border-bottom-color:var(--accent)}
+.local-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1rem;margin:1rem 0;max-width:900px}
+.local-result{padding:1rem;border:1px solid var(--rule-strong);border-radius:12px;margin:1rem 0}
+.local-analysis footer{margin-top:2.5rem;border-top:1px solid var(--rule);padding:1rem 0}
+.local-analysis .local-error{color:var(--bad);overflow-wrap:anywhere}
+.local-overlay{position:fixed;inset:0;background:rgb(26 18 22 / .45);display:grid;place-items:center;padding:1rem;z-index:100}
+.local-dialog{background:var(--paper);border:1px solid var(--control);border-radius:12px;padding:1.5rem;width:720px;max-width:100%;max-height:90dvh;overflow:auto}
+.local-dialog input[type=file]{margin-bottom:1rem;white-space:normal}
+@media(max-width:640px){.local-metrics{grid-template-columns:repeat(2,1fr)}.local-actions{width:100%}.local-heading{align-items:flex-start}.local-grid{grid-template-columns:1fr}.local-dialog{padding:1rem}.local-heading p{font-size:14px}.local-source p{font-size:14px}}
