@@ -15,7 +15,7 @@
 .local-status{min-height:44px}
 .local-analysis .link-btn{color:var(--accent);border:0;background:none;padding-inline:.4rem}
 .local-metrics{display:grid;grid-template-columns:repeat(4,1fr);border-block:1px solid var(--rule);padding:1.5rem 0;margin:1rem 0 2rem;gap:1rem}
-.local-metrics strong{display:block;font-family:var(--font-heading);font-size:clamp(24px,3vw,38px);line-height:1.2}
+.local-metrics strong{display:block;font-family:var(--font-mono);font-size:clamp(24px,3vw,38px);line-height:1.2}
 .local-metrics span{font-size:14px;color:var(--ink-2)}
 .local-funnel ol{list-style:none;padding:1rem 0}
 .local-funnel li{margin:.8rem 0 1.25rem}
@@ -42,3 +42,5 @@
 .local-dialog{background:var(--paper);border:1px solid var(--control);border-radius:12px;padding:1.5rem;width:720px;max-width:100%;max-height:90dvh;overflow:auto}
 .local-dialog input[type=file]{margin-bottom:1rem;white-space:normal}
 @media(max-width:640px){.local-metrics{grid-template-columns:repeat(2,1fr)}.local-actions{width:100%}.local-heading{align-items:flex-start}.local-grid{grid-template-columns:1fr}.local-dialog{padding:1rem}.local-heading p{font-size:14px}.local-source p{font-size:14px}}
+
+.local-metrics strong,.local-funnel li span,.local-table td,.local-table th[scope=row],.local-result{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
