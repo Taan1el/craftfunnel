@@ -1,0 +1,2 @@
+balance_transaction_id,charge_id,gross,fee,net,currency,created_utc
+bt_example,ch_match,19.90,0.88,19.02,usd,2026-10-31 12:00:00

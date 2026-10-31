@@ -1,0 +1,7 @@
+﻿user_id,event,timestamp
+"visitor, one",visit,2026-01-31
+"visitor, one",signup,2026-01-31 12:00:00
+"visitor, one",purchase,2026-02-01T10:00:00+02:00
+visitor-two,visit,2026-02-01T09:00:00Z
+visitor-two,signup,2026-02-01T09:02:00Z
+visitor-three,visit,2026-02-01

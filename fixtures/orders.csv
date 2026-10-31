@@ -1,0 +1,5 @@
+id,Amount,Currency
+ch_match,19.9,USD
+ch_mismatch,30,EUR
+ch_duplicate,9.99,USD
+ch_no_payment,10,USD

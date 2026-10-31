@@ -1,0 +1,6 @@
+id,Amount,Currency,Description
+ch_match,19.90,usd,"Starter, monthly"
+ch_mismatch,29.00,eur,"Note with ""quotes"""
+ch_duplicate,9.99,usd,First
+ch_duplicate,9.99,usd,Repeated
+ch_no_order,5.00,usd,Unmatched
