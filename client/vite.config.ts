@@ -1,6 +1,7 @@
 /// <reference types="vitest" />
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import { localFirstBuild } from './localBuild';
 
 // `npm run build:pages` builds with --mode pages: static assets are served
 // from /craftfunnel/ on GitHub Pages, and the client switches to the
@@ -13,7 +14,8 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
-    plugins: [react()],
+    plugins: [react(), ...(isPagesBuild ? [localFirstBuild({ base: '/craftfunnel/', name: 'CraftFunnel', id: 'craftfunnel', description: 'Private funnel and payment analysis from files', themeColor: '#ffffff' })] : [])],
+    build: { assetsInlineLimit: 0 },
     base: isPagesBuild ? '/craftfunnel/' : '/',
     define: {
       'import.meta.env.VITE_DEMO_MODE': JSON.stringify(isPagesBuild ? 'true' : 'false'),
