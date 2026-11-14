@@ -4,6 +4,20 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.2] - 2026-11-14
+
+### Fixed
+- Funnel steps that share a timestamp are no longer dropped: events with equal timestamps are ordered by their row in the file, and a note appears when every timestamp is a date.
+- The timestamp parser also accepts fractional seconds of 1 to 9 digits, offsets written as +00, +0200 and +02:00, times without seconds, and Unix epoch seconds or milliseconds. Ambiguous formats such as 01/02/2024 are still rejected, and the message lists what is accepted.
+- Imports skip bad rows instead of rejecting the whole file, report how many rows were imported and skipped with the first reasons and real file line numbers, and fail only when no row is valid or more than half are not.
+- Reconciliation sums amounts per ID and currency on each side and compares net totals, so a charge plus a refund or split payments net out. Exact repeated rows are reported separately as duplicates.
+- The currency column is optional with a default currency, ID matching ignores case by default, and comma, semicolon or tab delimiters are detected from the header.
+- P-values below 0.0001 are shown as "p < 0.0001" instead of 0.0000, and negative amounts in the discrepancy CSV are written as numbers instead of text with a leading apostrophe.
+- Importing a workspace backup now asks for confirmation and states how many rows will be replaced.
+- A new version of the offline app reaches users: pages load from the network first with the cached copy as the offline fallback, the update is precached without the HTTP cache, and a "A new version is ready." notice offers a Reload button.
+- Downloaded files keep their link alive for one second before it is released.
+- A browser storage message named the wrong app.
+
 ## [Unreleased]
 
 ### Fixed
