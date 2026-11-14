@@ -60,8 +60,8 @@ describe('local analysis screens', () => {
     const opener = await openImport(); chooseBackup();
     const keep = await screen.findByRole('button', { name: 'Keep current workspace' });
     expect(screen.getByRole('heading', { name: 'Replace the whole workspace?' })).toBeInTheDocument();
-    expect(screen.getByRole('dialog')).toHaveTextContent('replaces everything saved in this browser: 1 events, 0 payment rows, 0 order rows');
-    expect(screen.getByRole('dialog')).toHaveTextContent('The backup holds 2 events, 1 payment rows, and 0 order rows');
+    expect(screen.getByRole('dialog')).toHaveTextContent('replaces everything saved in this browser: 1 event, 0 payment rows, 0 order rows');
+    expect(screen.getByRole('dialog')).toHaveTextContent('The backup holds 2 events, 1 payment row, and 0 order rows');
     expect(store.saveWorkspace).not.toHaveBeenCalled(); expect(keep).toHaveFocus(); expect((await axe(opener.container)).violations).toEqual([]);
     fireEvent.keyDown(document, { key: 'Tab', shiftKey: true }); expect(screen.getByRole('button', { name: 'Replace workspace' })).toHaveFocus();
     fireEvent.click(keep); expect(screen.queryByRole('dialog')).not.toBeInTheDocument(); expect(opener).toHaveFocus(); expect(store.saveWorkspace).not.toHaveBeenCalled();
