@@ -64,16 +64,34 @@ function assetBytes(asset: Rollup.OutputAsset | Rollup.OutputChunk): string | Ui
   return asset.type === 'chunk' ? asset.code : asset.source;
 }
 
-function serviceWorker(cachePrefix: string, version: string, base: string, files: string[]): string {
+// Exported so the worker source can be exercised in tests exactly as it ships.
+export function serviceWorker(cachePrefix: string, version: string, base: string, files: string[]): string {
   return `const CACHE_PREFIX = ${JSON.stringify(cachePrefix)};
-const CACHE_NAME = CACHE_PREFIX + ${JSON.stringify(version)};
+const VERSION = ${JSON.stringify(version)};
 const BASE = ${JSON.stringify(base)};
 const PRECACHE = ${JSON.stringify(files)};
+// Built assets are fixed files; server CORS negotiation headers do not change them.
+const MATCH = { ignoreSearch: true, ignoreVary: true };
+
+function cacheName(prefix, version) {
+  return prefix + version;
+}
+
+// Pages are fetched network-first so a new build reaches users; everything else built is cache-first.
+function strategyFor(request, origin, base) {
+  const url = new URL(request.url);
+  if (request.method !== 'GET' || url.origin !== origin || !url.pathname.startsWith(base)) return 'ignore';
+  return request.mode === 'navigate' ? 'network-first' : 'cache-first';
+}
+
+const CACHE_NAME = cacheName(CACHE_PREFIX, VERSION);
 
 self.addEventListener('install', (event) => {
+  // The new worker waits until the page asks it to take over, so open tabs keep a consistent build.
   event.waitUntil(caches.open(CACHE_NAME).then(async (cache) => {
     try {
-      await cache.addAll(PRECACHE);
+      // cache: 'reload' skips the HTTP cache, so a new worker never stores a stale index.html.
+      await cache.addAll(PRECACHE.map((path) => new Request(path, { cache: 'reload' })));
     } catch (error) {
       await caches.delete(CACHE_NAME);
       throw error;
@@ -88,24 +106,32 @@ self.addEventListener('activate', (event) => {
   }));
 });
 
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
+});
+
+async function networkFirst(request) {
+  try {
+    const response = await fetch(request.url, { cache: 'no-cache', credentials: 'same-origin' });
+    if (response.status < 500) return response;
+  } catch (error) {
+    // Offline: fall through to the cached page.
+  }
+  const cache = await caches.open(CACHE_NAME);
+  const page = (await cache.match(request, MATCH)) || (await cache.match(BASE, MATCH)) || (await cache.match(BASE + 'index.html', MATCH));
+  if (page) return page;
+  return fetch(request);
+}
+
+async function cacheFirst(request) {
+  const cache = await caches.open(CACHE_NAME);
+  return (await cache.match(request, MATCH)) || fetch(request);
+}
+
 self.addEventListener('fetch', (event) => {
-  const request = event.request;
-  const url = new URL(request.url);
-  if (request.method !== 'GET' || url.origin !== self.location.origin || !url.pathname.startsWith(BASE)) return;
-  event.respondWith(caches.open(CACHE_NAME).then(async (cache) => {
-    // Built assets are fixed files; server CORS negotiation headers do not change them.
-    const cached = await cache.match(request, { ignoreSearch: true, ignoreVary: true });
-    if (cached) return cached;
-    try {
-      return await fetch(request);
-    } catch (error) {
-      if (request.mode === 'navigate') {
-        const page = await cache.match(BASE + 'index.html');
-        if (page) return page;
-      }
-      throw error;
-    }
-  }));
+  const strategy = strategyFor(event.request, self.location.origin, BASE);
+  if (strategy === 'ignore') return;
+  event.respondWith(strategy === 'network-first' ? networkFirst(event.request) : cacheFirst(event.request));
 });
 `;
 }

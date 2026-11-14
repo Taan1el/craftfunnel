@@ -1,5 +1,9 @@
 .local-source,.local-analysis{max-width:1264px;margin:auto;padding:1rem var(--page-pad)}
 .local-source{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;border-bottom:1px solid var(--rule)}
+.local-update{max-width:1264px;margin:auto;padding:0 var(--page-pad)}
+.local-update>div{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;padding:.5rem 0;border-bottom:1px solid var(--rule)}
+.local-update p{margin:0;color:var(--ink-2)}
+.local-update button{font:inherit;font-weight:600;color:var(--ink);background:var(--surface);border:1px solid var(--control);border-radius:12px;min-height:44px;padding:.55rem .8rem;cursor:pointer}
 .local-source label,.local-analysis label{display:block;font-size:14px;font-weight:600;margin-top:.5rem}
 .local-source select,.local-source button,.local-analysis button,.local-analysis select,.local-analysis input,.local-analysis textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--control);border-radius:12px;min-height:44px;padding:.55rem .8rem;max-width:100%}
 .local-analysis button,.local-source button{cursor:pointer;font-weight:600}
