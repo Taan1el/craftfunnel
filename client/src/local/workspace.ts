@@ -48,7 +48,7 @@ function openDatabase(): Promise<IDBDatabase> {
     request.onerror = () => reject(request.error ?? new Error('Browser storage could not open.'));
     request.onblocked = () => {
       blocked = true;
-      reject(new Error('Close other VaultMesh tabs to update browser storage.'));
+      reject(new Error('Close other CraftFunnel tabs to update browser storage.'));
     };
     request.onsuccess = () => {
       const database = request.result;

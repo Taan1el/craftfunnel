@@ -6,6 +6,6 @@ export function downloadFile(name: string, content: BlobPart, type: string): voi
   document.body.appendChild(link);
   link.click();
   link.remove();
-  // Keep the object URL alive until the browser has started the download.
-  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  // Keep the object URL alive until the browser has started the download, including for large files.
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
