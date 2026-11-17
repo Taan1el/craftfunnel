@@ -18,14 +18,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Downloaded files keep their link alive for one second before it is released.
 - A browser storage message named the wrong app.
 
-## [Unreleased]
+## [1.1.1] - 2026-11-12
+
+### Fixed
+- Keyboard focus stays inside the import dialog while a file is being parsed. Tab and Shift+Tab keep working after a validation error, and Escape returns focus to the Import file button once processing has finished.
+
+## [1.1.0] - 2026-10-31
+
+### Added
+- Your workspace: analyze your own event, experiment and payment files in the browser. Import an events CSV and define ordered steps for conversion and drop-off by UTC entry cohort, compare two conversion rates with a z-test, a 95% interval and a sample-size planner, and match payment or Stripe balance exports to orders by mapped ID, exact decimal amount and currency, with a discrepancy CSV export.
+- The workspace is saved in this browser, can be exported and imported as versioned JSON, and the app works offline after the first visit.
+- A test that checks every scrollable table wrapper is a labelled, focusable region.
+- Automated accessibility checks (WCAG 2 A and AA, using axe) for the funnel view, the Experiments, Billing and Customers tabs, and the customer drawer. Color contrast is verified separately because jsdom cannot compute colors.
 
 ### Fixed
 - The payment ledger, customers and customer drawer tables can now be scrolled sideways with the keyboard on narrow screens, with a visible focus outline.
-
-### Added
-- A test that checks every scrollable table wrapper is a labelled, focusable region.
-- Automated accessibility checks (WCAG 2 A and AA, using axe) for the funnel view, the Experiments, Billing and Customers tabs, and the customer drawer. Color contrast is verified separately because jsdom cannot compute colors.
 
 ### Changed
 - New visual identity: pure white pages with a single raspberry accent, Red Hat Display, Red Hat Text and Azeret Mono type, and 12px rounded bars and controls.
