@@ -4,6 +4,14 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Fixed
+- Payment and order imports read amounts written with a decimal comma (12,50) in semicolon- and tab-delimited files, which were rejected before. The amount column decides the separator: rows written the other way or with digit grouping such as 1.250,00 are skipped and listed, and the import report says the file was read with a decimal comma. Amounts are stored as 12.5, so backups and discrepancy exports do not change. A quoted 12,50 in a comma-delimited file is skipped with a message that names the cause.
+
+### Added
+- A semicolon payments fixture with decimal commas sits next to the comma-delimited one.
+
 ## [1.1.2] - 2026-11-14
 
 ### Fixed

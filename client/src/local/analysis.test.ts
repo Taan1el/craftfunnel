@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import ordersFixture from '../../../fixtures/orders.csv?raw';
+import paymentsFixture from '../../../fixtures/payments.csv?raw';
+import semicolonPaymentsFixture from '../../../fixtures/payments-semicolon.csv?raw';
 import { decimal, describeImport, detectDelimiter, discrepancyCsv, emptyWorkspace, experiment, formatP, funnel, hasDayResolution, importEvents, importMoney, parseBackup, parseCsv, parseEvents, parseMoney, parseTime, reconcile, sampleSize, validateSteps } from './analysis';
 
 describe('CSV files', () => {
@@ -182,6 +185,43 @@ describe('delimiters', () => {
   it('imports semicolon payment files and reports the detected delimiter', () => {
     const { rows, report } = importMoney('id;Amount;Currency\na;5.25;usd', { mapping: { id: 'id', amount: 'Amount', currency: 'Currency' } });
     expect(rows).toEqual([{ id: 'a', amount: '5.25', currency: 'USD', row: 2 }]); expect(describeImport(report)).toContain('semicolon-delimited');
+    expect(report.decimalComma).toBeUndefined(); expect(describeImport(report)).not.toContain('decimal comma');
+  });
+});
+describe('decimal commas', () => {
+  const mapping = { id: 'id', amount: 'Amount', currency: 'Currency' };
+  it('reads a decimal comma only when asked and returns the canonical point form', () => {
+    expect(decimal('12,50', ',')).toBe('12.5'); expect(decimal('-0003,000', ',')).toBe('-3'); expect(decimal('-0,00', ',')).toBe('0'); expect(decimal(' 7 ', ',')).toBe('7');
+    expect(() => decimal('12,50')).toThrow('plain decimal');
+  });
+  it.each(['12.50', '1.250,00', '1 250,00', '€12,50', '1,123456789', '12,'])('rejects %s when the column uses a decimal comma', value => expect(() => decimal(value, ',')).toThrow('decimal comma'));
+  it.each([[';'], ['\t']])('imports %j files whose amounts use a decimal comma and says so', delimiter => {
+    const csv = ['id', 'Amount', 'Currency'].join(delimiter) + '\n' + [['a', '12,50', 'eur'], ['b', '-3,5', 'eur'], ['c', '40', 'eur']].map(row => row.join(delimiter)).join('\n');
+    const { rows, report } = importMoney(csv, { mapping });
+    expect(rows.map(row => row.amount)).toEqual(['12.5', '-3.5', '40']); expect(report.decimalComma).toBe(true);
+    expect(describeImport(report)).toContain('Read amounts with a decimal comma, for example 12,50 as 12.50.');
+    expect(parseBackup(JSON.stringify({ ...emptyWorkspace(), payments: rows })).payments).toEqual(rows);
+  });
+  it('skips rows that use the other separator instead of misreading them', () => {
+    const { rows, report } = importMoney('id;Amount;Currency\na;12,50;eur\nb;1.250,00;eur\nc;7,25;eur\nd;3.10;eur\ne;1,5;eur', { mapping });
+    expect(rows.map(row => [row.id, row.amount])).toEqual([['a', '12.5'], ['c', '7.25'], ['e', '1.5']]);
+    expect(report.reasons).toEqual([expect.stringMatching(/^Line 3: amount: .*decimal comma/), expect.stringMatching(/^Line 5: amount: .*decimal comma/)]);
+  });
+  it('keeps a point column when most amounts use a point and skips the stray comma row', () => {
+    const { rows, report } = importMoney('id;Amount;Currency\na;12.50;eur\nb;3.10;eur\nc;1,5;eur', { mapping });
+    expect(rows.map(row => row.amount)).toEqual(['12.5', '3.1']); expect(report.decimalComma).toBeUndefined();
+    expect(report.reasons).toEqual([expect.stringContaining('Line 4: amount: Expected a plain decimal')]);
+  });
+  it('reads the semicolon fixture exactly like the comma fixture', () => {
+    const comma = importMoney(paymentsFixture, { mapping }); const semicolon = importMoney(semicolonPaymentsFixture, { mapping });
+    expect(semicolon.rows).toEqual(comma.rows); expect(semicolon.report).toMatchObject({ skipped: 0, delimiter: 'semicolon', decimalComma: true });
+    const orders = parseMoney(ordersFixture, mapping);
+    expect(reconcile(semicolon.rows, orders)).toEqual(reconcile(comma.rows, orders));
+  });
+  it('explains that comma-delimited files cannot use a decimal comma', () => {
+    const { rows, report } = importMoney('id,Amount,Currency\na,1.5,usd\nb,"12,50",usd\nc,2,usd', { mapping });
+    expect(rows.map(row => row.id)).toEqual(['a', 'c']); expect(report.decimalComma).toBeUndefined();
+    expect(report.reasons).toEqual(['Line 3: amount: a decimal comma such as 12,50 is read only in semicolon- or tab-delimited files. Use 12.50 here.']);
   });
 });
 describe('p-value text', () => {

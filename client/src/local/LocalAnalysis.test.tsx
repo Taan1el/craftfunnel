@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { axe } from '../test/axe';
-import { emptyWorkspace } from './analysis';
+import { emptyWorkspace, parseImport, type ImportKind, type ImportOptions } from './analysis';
 import { LocalAnalysis } from './LocalAnalysis';
 const store = vi.hoisted(() => ({ loadWorkspaceSnapshot: vi.fn(), saveWorkspace: vi.fn() }));
 vi.mock('./workspace', () => store);
@@ -80,6 +80,18 @@ describe('local analysis screens', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(screen.queryByText('Replace the whole workspace?')).not.toBeInTheDocument(); expect(store.saveWorkspace).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('status')).toHaveTextContent('Imported 1 row, skipped 2.'); expect(screen.getByRole('status')).toHaveTextContent('Line 9: user_id and event');
+  });
+  it('imports a semicolon payments file with decimal commas and reports it', async () => {
+    const csv = 'id;Amount;Currency\nch_1;12,50;eur\nch_2;-3,5;eur\n';
+    // jsdom files cannot be read as text, so the mocked reader hands the same CSV to the real parser with the dialog's options.
+    importer.importFile.mockImplementationOnce(async (_file: File, kind: ImportKind, options: ImportOptions) => parseImport(csv, kind, options));
+    await openImport(); fireEvent.change(screen.getByLabelText('File type'), { target: { value: 'payments' } });
+    expect(screen.getByRole('dialog')).toHaveTextContent('Semicolon and tab files may use a decimal comma (12,50)');
+    fireEvent.change(screen.getByLabelText('Choose file'), { target: { files: [new File([csv], 'payments.csv')] } });
+    fireEvent.click(screen.getByRole('button', { name: 'Import and save' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(store.saveWorkspace.mock.calls[0][0].payments.map((row: { amount: string }) => row.amount)).toEqual(['12.5', '-3.5']);
+    expect(screen.getByRole('status')).toHaveTextContent('Detected a semicolon-delimited file.'); expect(screen.getByRole('status')).toHaveTextContent('Read amounts with a decimal comma');
   });
   it('shows the day-resolution note only for date-only timestamps', async () => {
     store.loadWorkspaceSnapshot.mockResolvedValue({ data: { ...emptyWorkspace(), events: [{ user: 'a', event: 'visit', time: 86_400_000 }, { user: 'a', event: 'signup', time: 86_400_000 }] }, revision: 0 });

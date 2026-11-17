@@ -5,7 +5,7 @@ export interface MoneyRow { id: string; amount: string; currency: string; row: n
 // Currency and date are optional columns; an empty name means the file has none.
 export interface Mapping { id: string; amount: string; currency: string; date?: string }
 export interface ImportOptions { mapping: Mapping; defaultCurrency?: string }
-export interface ImportReport { imported: number; skipped: number; reasons: string[]; hint?: string; delimiter?: string }
+export interface ImportReport { imported: number; skipped: number; reasons: string[]; hint?: string; delimiter?: string; decimalComma?: boolean }
 export interface Workspace {
   version: 1;
   events: EventRow[];
@@ -93,6 +93,7 @@ function importRows<T>(data: CsvRecord[], columnCount: number, delimiter: Delimi
 export function describeImport(report: ImportReport): string {
   const lines = [`Imported ${report.imported} row${report.imported === 1 ? '' : 's'}, skipped ${report.skipped}.`];
   if (report.delimiter) lines.push(`Detected a ${report.delimiter}-delimited file.`);
+  if (report.decimalComma) lines.push('Read amounts with a decimal comma, for example 12,50 as 12.50.');
   lines.push(...report.reasons);
   if (report.skipped > report.reasons.length) lines.push(`and ${report.skipped - report.reasons.length} more skipped.`);
   if (report.hint) lines.push(report.hint);
@@ -156,9 +157,13 @@ export function funnel(events: EventRow[], steps: string[], period: 'day' | 'mon
 }
 
 // Compare decimal values exactly, without currency exponents or floating-point rounding.
-export function decimal(value: string): string {
-  if (!/^-?\d{1,18}(?:\.\d{1,8})?$/.test(value.trim())) fail('Expected a plain decimal amount in major currency units (no grouping, exponent, or symbol).');
-  const [whole, fraction = ''] = value.trim().replace(/^-/, '').split('.');
+// The separator is a point by default, or a comma for files whose amounts are written as 12,50. The result always uses a point.
+export function decimal(value: string, separator: '.' | ',' = '.'): string {
+  const pattern = separator === ',' ? /^-?\d{1,18}(?:,\d{1,8})?$/ : /^-?\d{1,18}(?:\.\d{1,8})?$/;
+  if (!pattern.test(value.trim())) fail(separator === ','
+    ? 'Expected a decimal amount with a decimal comma like the rest of this column, such as 12,50 (no grouping, exponent, or symbol).'
+    : 'Expected a plain decimal amount in major currency units (no grouping, exponent, or symbol).');
+  const [whole, fraction = ''] = value.trim().replace(/^-/, '').split(separator);
   const integer = whole.replace(/^0+(?=\d)/, ''); const digits = fraction.replace(/0+$/, '');
   const result = integer + (digits ? `.${digits}` : '');
   return value.trim().startsWith('-') && result !== '0' ? `-${result}` : result;
@@ -181,15 +186,24 @@ export function importMoney(input: string, options: ImportOptions): { rows: Mone
   if (new Set(used).size !== used.length) fail('ID, amount, currency, and date must use different columns.');
   if (currency < 0 && !/^[A-Za-z]{3}$/.test(fallback)) fail('Name a currency column or enter a default currency of three letters, for example USD.');
   if (fallback && !/^[A-Za-z]{3}$/.test(fallback)) fail('Default currency must be three letters, for example USD.');
-  return importRows(data, headers.length, delimiter, (cells, line) => {
+  // A comma cannot be a decimal comma in a comma-delimited file, so only semicolon and tab files may use one.
+  // The amount column decides for the whole file: when more amounts hold a comma than a point, every amount must use a decimal comma.
+  // Rows written the other way are skipped and reported instead of being misread.
+  const count = (mark: string) => data.filter(record => record.cells[amount]?.includes(mark)).length;
+  const separator = delimiter !== ',' && count(',') > count('.') ? ',' : '.';
+  const amountError = (value: string, message: string) => separator === '.' && delimiter === ',' && /^-?\d{1,18},\d{1,8}$/.test(value.trim())
+    ? 'a decimal comma such as 12,50 is read only in semicolon- or tab-delimited files. Use 12.50 here.'
+    : message;
+  const result = importRows(data, headers.length, delimiter, (cells, line) => {
     const key = cells[id].trim();
     if (!text(key)) fail('ID must contain 1 to 500 characters.');
     const code = (currency >= 0 ? cells[currency].trim() : '') || fallback;
     if (!/^[A-Za-z]{3}$/.test(code)) fail(code ? 'expected a three-letter currency code.' : 'currency is empty and no default currency was entered.');
     const when = date >= 0 ? cells[date].trim() : '';
     if (when.length > 500) fail('date exceeds 500 characters.');
-    try { return { id: key, amount: decimal(cells[amount]), currency: code.toUpperCase(), row: line, ...(when ? { date: when } : {}) }; } catch (error) { return fail(`amount: ${(error as Error).message}`); }
+    try { return { id: key, amount: decimal(cells[amount], separator), currency: code.toUpperCase(), row: line, ...(when ? { date: when } : {}) }; } catch (error) { return fail(`amount: ${amountError(cells[amount], (error as Error).message)}`); }
   });
+  return separator === ',' ? { ...result, report: { ...result.report, decimalComma: true } } : result;
 }
 export const parseMoney = (input: string, mapping: Mapping, defaultCurrency = ''): MoneyRow[] => importMoney(input, { mapping, defaultCurrency }).rows;
 
