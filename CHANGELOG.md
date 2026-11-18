@@ -8,8 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 - Payment and order imports read amounts written with a decimal comma (12,50) in semicolon- and tab-delimited files, which were rejected before. The amount column decides the separator: rows written the other way or with digit grouping such as 1.250,00 are skipped and listed, and the import report says the file was read with a decimal comma. Amounts are stored as 12.5, so backups and discrepancy exports do not change. A quoted 12,50 in a comma-delimited file is skipped with a message that names the cause.
+- Reconciliation no longer reports an ID that appears in one file only as a missing payment or order when its rows net to zero in every currency, such as a charge with its full refund or an order with its cancellation. These IDs are listed in their own table on the Billing view and are counted neither as discrepancies nor as matches. Repeated identical rows on them are still flagged as duplicates.
 
 ### Added
+- Export offers a zero-net IDs CSV with the same columns and formula protection as the discrepancy CSV.
 - A semicolon payments fixture with decimal commas sits next to the comma-delimited one.
 
 ## [1.1.2] - 2026-11-14

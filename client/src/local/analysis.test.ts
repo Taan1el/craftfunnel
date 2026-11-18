@@ -49,8 +49,27 @@ describe('exact payment comparison', () => {
   it('nets a charge plus a refund and split payments against one order', () => {
     const p = parseMoney('id,Amount,Currency\nch_1,100.00,usd\nch_1,-30.25,usd\nch_2,10,eur\nch_2,15.5,eur', { id: 'id', amount: 'Amount', currency: 'Currency' });
     const o = parseMoney('id,Amount,Currency\nch_1,69.75,usd\nch_2,25.5,eur', { id: 'id', amount: 'Amount', currency: 'Currency' });
-    expect(reconcile(p, o)).toEqual({ matched: 2, discrepancies: [] });
+    expect(reconcile(p, o)).toEqual({ matched: 2, discrepancies: [], zeroNet: [] });
     expect(reconcile(p, parseMoney('id,Amount,Currency\nch_1,70,usd\nch_2,25.5,eur', { id: 'id', amount: 'Amount', currency: 'Currency' })).discrepancies.map(row => row.id)).toEqual(['ch_1']);
+  });
+  it('keeps one-sided IDs that net to zero out of missing payments and orders', () => {
+    const map = { id: 'id', amount: 'Amount', currency: 'Currency' };
+    const p = parseMoney('id,Amount,Currency\nch_refunded,100.00,usd\nch_refunded,-100,usd\nch_open,40,usd\nch_part,50,usd\nch_part,-20,usd\nch_multi,10,usd\nch_multi,-10,usd\nch_multi,7,eur', map);
+    const o = parseMoney('id,Amount,Currency\nord_cancelled,25.5,eur\nord_cancelled,-25.50,eur\nord_open,8,eur', map);
+    const result = reconcile(p, o);
+    expect(result.matched).toBe(0);
+    expect(result.discrepancies.map(row => `${row.type}:${row.id}`)).toEqual(['missing order:ch_open', 'missing order:ch_part', 'missing order:ch_multi', 'missing payment:ord_open']);
+    expect(result.zeroNet.map(row => `${row.type}:${row.id}`)).toEqual(['no order, net zero:ch_refunded', 'no payment, net zero:ord_cancelled']);
+    expect(result.zeroNet[0]).toMatchObject({ payment: '0 USD (2 rows)', order: '', rows: 'payments: 2, 3; orders: none', currency: 'USD', paymentNet: '0', orderNet: '' });
+    expect(result.zeroNet[1]).toMatchObject({ payment: '', order: '0 EUR (2 rows)', orderNet: '0' });
+  });
+  it('folds ID case before netting one-sided rows, and still flags repeated rows on a zero-net ID', () => {
+    const map = { id: 'id', amount: 'Amount', currency: 'Currency', date: 'Created' };
+    const p = parseMoney('id,Amount,Currency,Created\nCH_1,5,usd,2026-01-01\nch_1,-5,usd,2026-01-02\nch_2,5,usd,2026-01-01\nch_2,5,usd,2026-01-01\nch_2,-10,usd,2026-01-03', map);
+    const folded = reconcile(p, []);
+    expect(folded.discrepancies.map(row => `${row.type}:${row.id}`)).toEqual(['duplicate:ch_2']); expect(folded.zeroNet.map(row => row.id)).toEqual(['CH_1', 'ch_2']);
+    const exact = reconcile(p, [], { ignoreIdCase: false });
+    expect(exact.discrepancies.map(row => `${row.type}:${row.id}`)).toEqual(['missing order:CH_1', 'missing order:ch_1', 'duplicate:ch_2']); expect(exact.zeroNet.map(row => row.id)).toEqual(['ch_2']);
   });
   it('sums amounts exactly beyond floating-point range', () => {
     const rows = (amounts: string[]) => parseMoney(`id,Amount,Currency\n${amounts.map(amount => `x,${amount},usd`).join('\n')}`, { id: 'id', amount: 'Amount', currency: 'Currency' });

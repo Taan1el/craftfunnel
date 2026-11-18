@@ -210,7 +210,9 @@ export const parseMoney = (input: string, mapping: Mapping, defaultCurrency = ''
 export interface Discrepancy { type: string; id: string; payment: string; order: string; rows: string; currency?: string; paymentNet?: string; orderNet?: string }
 interface Net { total: bigint; count: number }
 // Net totals per currency compare charges, refunds, and split payments as one balance per ID. Equal repeated rows are listed apart.
-export function reconcile(payments: MoneyRow[], orders: MoneyRow[], options: { ignoreIdCase?: boolean } = {}): { matched: number; discrepancies: Discrepancy[] } {
+// An ID on one side only whose rows net to zero in every currency (a charge and its full refund, an order and its cancellation)
+// has nothing to collect or pay out, so it goes to zeroNet instead of being reported as a missing payment or order.
+export function reconcile(payments: MoneyRow[], orders: MoneyRow[], options: { ignoreIdCase?: boolean } = {}): { matched: number; discrepancies: Discrepancy[]; zeroNet: Discrepancy[] } {
   const fold = (id: string) => options.ignoreIdCase === false ? id : id.toLowerCase();
   const group = (rows: MoneyRow[]) => { const map = new Map<string, MoneyRow[]>(); for (const row of rows) { const list = map.get(fold(row.id)) ?? []; list.push(row); map.set(fold(row.id), list); } return map; };
   const net = (rows: MoneyRow[]) => { const map = new Map<string, Net>(); for (const row of rows) { const entry = map.get(row.currency) ?? { total: ZERO, count: 0 }; entry.total += toUnits(row.amount); entry.count++; map.set(row.currency, entry); } return map; };
@@ -218,22 +220,24 @@ export function reconcile(payments: MoneyRow[], orders: MoneyRow[], options: { i
   const describeNet = (map: Map<string, Net>) => [...map].map(([currency, { total, count }]) => `${fromUnits(total)} ${currency}${count > 1 ? ` (${count} rows)` : ''}`).join('; ');
   const describeRepeats = (lists: MoneyRow[][]) => lists.map(list => `${list[0].amount} ${list[0].currency}${list[0].date ? ` on ${list[0].date}` : ''} in ${list.length} identical rows`).join('; ');
   const lines = (rows: MoneyRow[]) => rows.map(row => row.row).join(', ') || 'none';
-  const p = group(payments); const o = group(orders); let matched = 0; const discrepancies: Discrepancy[] = [];
+  const isZero = (map: Map<string, Net>) => [...map.values()].every(entry => entry.total === ZERO);
+  const p = group(payments); const o = group(orders); let matched = 0; const discrepancies: Discrepancy[] = []; const zeroNet: Discrepancy[] = [];
   for (const key of new Set([...p.keys(), ...o.keys()])) {
     const paid = p.get(key) ?? []; const ordered = o.get(key) ?? []; const id = (paid[0] ?? ordered[0]).id;
     const paidNet = net(paid); const orderedNet = net(ordered); const currencies = [...new Set([...paidNet.keys(), ...orderedNet.keys()])];
     const single = currencies.length === 1 ? currencies[0] : '';
     const numbers = { currency: single, paymentNet: single && paidNet.has(single) ? fromUnits(paidNet.get(single)!.total) : '', orderNet: single && orderedNet.has(single) ? fromUnits(orderedNet.get(single)!.total) : '' };
-    let type = '';
-    if (!paid.length) type = 'missing payment';
+    let type = ''; const oneSided = !paid.length || !ordered.length;
+    if (oneSided && isZero(paid.length ? paidNet : orderedNet)) type = paid.length ? 'no order, net zero' : 'no payment, net zero';
+    else if (!paid.length) type = 'missing payment';
     else if (!ordered.length) type = 'missing order';
     else if (currencies.some(currency => (paidNet.get(currency)?.total ?? ZERO) !== (orderedNet.get(currency)?.total ?? ZERO))) type = 'mismatch';
     else matched++;
-    if (type) discrepancies.push({ type, id, payment: describeNet(paidNet), order: describeNet(orderedNet), rows: `payments: ${lines(paid)}; orders: ${lines(ordered)}`, ...numbers });
+    if (type) (type.endsWith('net zero') ? zeroNet : discrepancies).push({ type, id, payment: describeNet(paidNet), order: describeNet(orderedNet), rows: `payments: ${lines(paid)}; orders: ${lines(ordered)}`, ...numbers });
     const paidRepeats = repeats(paid); const orderedRepeats = repeats(ordered);
     if (paidRepeats.length || orderedRepeats.length) discrepancies.push({ type: 'duplicate', id, payment: describeRepeats(paidRepeats), order: describeRepeats(orderedRepeats), rows: `payments: ${lines(paidRepeats.flat())}; orders: ${lines(orderedRepeats.flat())}`, ...numbers });
   }
-  return { matched, discrepancies };
+  return { matched, discrepancies, zeroNet };
 }
 export function discrepancyCsv(rows: Discrepancy[]): string {
   // Prefix formula-leading text so spreadsheet applications treat IDs as text. Plain numbers, including negative ones, stay numeric.

@@ -106,4 +106,16 @@ describe('local analysis screens', () => {
     render(<LocalAnalysis />); expect(await screen.findByText(/p < 0\.0001/)).toBeInTheDocument(); expect(screen.queryByText(/p = 0\.0000/)).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Billing' })); expect(screen.getByLabelText('Match IDs ignoring upper and lower case')).toBeChecked();
   });
+  it('lists one-sided IDs that net to zero apart from discrepancies', async () => {
+    const payments = [{ id: 'ch_1', amount: '20', currency: 'USD', row: 2 }, { id: 'ch_1', amount: '-20', currency: 'USD', row: 3 }, { id: 'ch_2', amount: '5', currency: 'USD', row: 4 }];
+    store.loadWorkspaceSnapshot.mockResolvedValue({ data: { ...emptyWorkspace(), payments }, revision: 0 });
+    const { container } = render(<LocalAnalysis />); await waitFor(() => expect(screen.getByRole('button', { name: 'Import file' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Billing' }));
+    expect(screen.getByText(/1 ID appears in one file only/)).toBeInTheDocument();
+    const zero = screen.getByRole('region', { name: 'One-sided IDs that net to zero' }); expect(zero).toHaveAttribute('tabindex', '0');
+    expect(zero).toHaveTextContent('no order, net zero'); expect(zero).toHaveTextContent('ch_1'); expect(zero).toHaveTextContent('0 USD (2 rows)'); expect(zero).not.toHaveTextContent('ch_2');
+    const issues = screen.getByRole('region', { name: 'Payment discrepancies' }); expect(issues).toHaveTextContent('missing order'); expect(issues).not.toHaveTextContent('ch_1');
+    expect(screen.getByRole('option', { name: 'Zero-net IDs CSV' })).toBeInTheDocument();
+    expect((await axe(container)).violations).toEqual([]);
+  });
 });
